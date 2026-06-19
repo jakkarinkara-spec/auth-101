@@ -1,16 +1,20 @@
-import { pgTable, text, timestamp, PgNumericNumber } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-export const usersTable = pgTable('users', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  email: text('email').notNull().unique(),
-  password: text('password').notNull(), // เก็บ hash ไม่เก็บ plain text
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+export const usersTable = pgTable("users", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name"),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(), // เก็บ hash ไม่เก็บ plain text
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const crops = pgTable('crops', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
-  dayGrow: text('email').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+export const crops = pgTable("crops", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name"),
+  dayGrow: text("email").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
