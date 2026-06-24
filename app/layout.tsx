@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Auth 101",
-  description: "A modern authentication demo with Next.js 16, NextAuth v5, and Drizzle ORM.",
+  description:
+    "A modern authentication demo with Next.js 16, NextAuth v5, and Drizzle ORM.",
 };
 
 export default function RootLayout({

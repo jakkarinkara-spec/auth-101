@@ -125,7 +125,34 @@ null
 ## Session
 
 **กลยุทธ์**: JWT (stateless)
-**ชื่อ cookie**: `next-auth.session-token`
 **อายุ**: 30 วัน (ค่าเริ่มต้นของ NextAuth)
 
+**ชื่อ cookie** (NextAuth v5 / authjs):
+
+| Cookie | ใช้งานเมื่อ |
+|--------|------------|
+| `authjs.session-token` | HTTP (development) |
+| `__Secure-authjs.session-token` | HTTPS (production) |
+
 เข้าถึง session ได้ฝั่ง server ผ่าน `auth()` จาก `@/auth` และฝั่ง client ผ่าน `useSession()` จาก `next-auth/react`
+
+---
+
+## Route protection — proxy.ts
+
+`proxy.ts` ที่ root ของโปรเจคทำหน้าที่ตรวจสอบ session cookie ก่อน request เข้าถึง Server Component
+
+**ไฟล์**: `proxy.ts` (Next.js 16 — เดิมชื่อ `middleware.ts`)
+**ฟังก์ชัน**: `export function proxy` (เดิมชื่อ `middleware`)
+
+**พฤติกรรม**:
+
+| เงื่อนไข | ผลลัพธ์ |
+|----------|---------|
+| มี session cookie + เข้า `/login` หรือ `/register` | redirect → `/dashboard` |
+| ไม่มี session cookie + เข้า `/dashboard/*` | redirect → `/login` |
+| กรณีอื่นๆ | `NextResponse.next()` |
+
+**matcher ที่ครอบคลุม**: `/dashboard/:path*`, `/login`, `/register`
+
+> proxy ตรวจแค่ว่า cookie มีอยู่หรือไม่ (fast check) การ validate JWT จริงทำใน Server Component ด้วย `auth()` อีกชั้นหนึ่ง

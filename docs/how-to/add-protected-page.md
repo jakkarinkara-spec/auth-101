@@ -46,20 +46,42 @@ export default async function DashboardPage() {
 
 ---
 
-## ป้องกันหลายหน้าพร้อมกันด้วย middleware
+## ป้องกันหลายหน้าพร้อมกันด้วย proxy
 
-ถ้ามีหลายหน้าที่ต้องป้องกัน ใช้ middleware แทนการเพิ่ม `auth()` ในแต่ละหน้า
+ถ้ามีหลายหน้าที่ต้องป้องกัน เพิ่ม path เข้าไปใน `proxy.ts` ที่ root ของโปรเจค (Next.js 16 เปลี่ยนชื่อจาก `middleware.ts` เป็น `proxy.ts`)
 
-สร้างไฟล์ `middleware.ts` ที่ root ของโปรเจค:
+เปิดไฟล์ `proxy.ts` แล้วเพิ่ม path ใน `matcher` และใน if-condition:
 
 ```ts
-export { auth as middleware } from '@/auth'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+const SESSION_COOKIES = ['authjs.session-token', '__Secure-authjs.session-token']
+
+function hasSession(request: NextRequest): boolean {
+  return SESSION_COOKIES.some((name) => request.cookies.has(name))
+}
+
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const isAuthenticated = hasSession(request)
+
+  if (isAuthenticated && (pathname === '/login' || pathname === '/register')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // เพิ่ม path ใหม่ที่ต้องการป้องกันที่นี่
+  if (!isAuthenticated && (pathname.startsWith('/dashboard') || pathname.startsWith('/settings'))) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  return NextResponse.next()
+}
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/settings/:path*'],
+  // เพิ่ม path ใหม่ใน matcher ด้วย
+  matcher: ['/dashboard/:path*', '/settings/:path*', '/login', '/register'],
 }
 ```
 
-middleware นี้จะ redirect ผู้ใช้ที่ยังไม่ล็อกอินสำหรับทุก path ที่ตรงกับ `matcher` โดยไม่ต้องแก้ไขแต่ละหน้า
-
-ปลายทางของ redirect คือ `pages.signIn` ใน `auth.ts` ซึ่งในโปรเจคนี้ตั้งไว้ที่ `/login` อยู่แล้ว
+proxy ทำหน้าที่ตรวจ session cookie อย่างรวดเร็วที่ edge — ส่วนการ validate JWT จริงยังต้องทำใน Server Component แต่ละหน้า (ดูขั้นตอนที่ 1)

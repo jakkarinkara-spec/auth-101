@@ -24,6 +24,24 @@ NextAuth รองรับสองกลยุทธ์สำหรับ sess
 
 สำหรับโปรเจคที่ deploy บน Vercel เรื่องนี้สำคัญมาก `pg` แบบดั้งเดิมจะล้มเหลวหรือทำงานผิดปกติใน serverless environment adapter ของ Neon ส่ง query ผ่าน HTTP แลกกับ latency เล็กน้อยเพื่อให้ใช้งานได้
 
+## ทำไมถึงใช้การป้องกัน 2 ชั้น (proxy + Server Component)
+
+โปรเจคนี้ป้องกัน route ด้วยสองชั้น แทนที่จะใช้ชั้นเดียว เหตุผลมาจากข้อจำกัดของแต่ละชั้น
+
+**ชั้นที่ 1 — proxy.ts (edge)**
+
+`proxy.ts` รันที่ edge ก่อน request จะเข้าถึง application จริง มันตรวจแค่ว่า session cookie มีอยู่หรือไม่ — ไม่มีการ verify ลายเซ็น ไม่ query ฐานข้อมูล ทำให้เร็วมากและไม่เพิ่ม latency
+
+ข้อจำกัด: edge runtime ไม่สามารถ import `auth()` จาก NextAuth ได้โดยตรงในทุกกรณี และการตรวจ cookie อย่างเดียวไม่ปลอดภัยเพียงพอ เพราะ cookie อาจถูกแก้ไขหรือหมดอายุแล้วแต่ยังมีชื่ออยู่
+
+**ชั้นที่ 2 — Server Component (auth())**
+
+`dashboard/page.tsx` เรียก `auth()` ซึ่ง verify ลายเซ็น JWT จริงๆ ถ้า cookie ถูกแก้ไข หมดอายุ หรือ `AUTH_SECRET` ถูก rotate แล้ว `auth()` จะคืนค่า `null` และ redirect ไปที่ `/login`
+
+**ทำไมต้องสองชั้น**
+
+ชั้น proxy กรองคำขอที่ชัดเจนออกไปก่อน (ไม่มี cookie เลย) โดยไม่ต้องรัน application code ชั้น Server Component จัดการกับกรณีที่ละเอียดกว่า (cookie มีแต่ JWT ไม่ valid) ทั้งสองชั้นร่วมกันทำให้ระบบทั้งเร็วและปลอดภัย
+
 ## request ล็อกอินไหลผ่านระบบอย่างไร
 
 เมื่อผู้ใช้กดปุ่ม login:
