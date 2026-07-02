@@ -25,16 +25,19 @@
 ```
 auth-101/
 ├── auth.ts                         # NextAuth config (JWT strategy)
-├── proxy.ts                        # Route protection (Next.js 16 Proxy) ← ใหม่
+├── proxy.ts                        # Route protection (Next.js 16 Proxy)
 ├── drizzle.config.ts               # Drizzle ORM config
 │
 ├── app/
 │   ├── page.tsx                    # Landing page (Hero + Feature cards)
-│   ├── layout.tsx                  # Root layout (Geist font)
+│   ├── layout.tsx                  # Root layout — Geist font + global Navbar
+│   │
+│   ├── components/
+│   │   └── navbar.tsx              # Global Navbar — auth-aware (sign in / sign out)
 │   │
 │   ├── login/page.tsx              # Login form (Client Component)
 │   ├── register/page.tsx           # Register form (Client Component)
-│   ├── dashboard/page.tsx          # Dashboard (Server Component) ← ใหม่
+│   ├── dashboard/page.tsx          # Dashboard (Server Component)
 │   │
 │   ├── api/
 │   │   └── auth/
@@ -119,7 +122,8 @@ AUTH_SECRET=    # 64-char hex key สำหรับ sign JWT
 | Homepage | Landing page — hero, badge, feature cards |
 | Login | Indigo accent, glass card, loading spinner |
 | Register | Violet accent, glass card, password helper text |
-| Dashboard | Server Component, profile + session info, sign out action |
+| Dashboard | Server Component, profile + session info |
+| Navbar (global) | Auth-aware — sign out เมื่อ login, sign in เมื่อไม่ได้ login |
 
 ---
 
@@ -130,3 +134,5 @@ AUTH_SECRET=    # 64-char hex key สำหรับ sign JWT
 - `app/dashboard/page.tsx` เป็น Server Component ดึง session ด้วย `auth()` และ redirect ไป `/login` ถ้ายังไม่ได้ login
 - Next.js 16 เปลี่ยนชื่อ `middleware.ts` → `proxy.ts` และ function ชื่อ `middleware` → `proxy` (deprecated ใน v16.0.0)
 - proxy ทำหน้าที่แค่ตรวจ session cookie (fast check) ส่วน session จริงยัง validate ใน Server Component อีกชั้น
+- `app/components/navbar.tsx` เป็น async Server Component ตรวจ session ด้วย `auth()` — แสดง sign out เมื่อ login อยู่, แสดง sign in + get started เมื่อยังไม่ login
+- Navbar เป็น `fixed` (position) — dashboard page ใช้ `pt-16` เพื่อ offset ให้ content ไม่ถูกทับ
