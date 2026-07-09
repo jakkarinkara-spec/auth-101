@@ -26,7 +26,9 @@ export async function GET(request: NextRequest) {
       db
         .select({ value: count() })
         .from(itemMaintenanceRequests)
-        .where(inArray(itemMaintenanceRequests.requestStatus, PENDING_STATUSES)),
+        .where(
+          inArray(itemMaintenanceRequests.requestStatus, PENDING_STATUSES),
+        ),
       db
         .select({ value: count() })
         .from(itemMaintenanceRequests)
@@ -40,7 +42,9 @@ export async function GET(request: NextRequest) {
         ? db
             .select({ value: count() })
             .from(itemMaintenanceRequests)
-            .where(eq(itemMaintenanceRequests.requesterEmailId, requesterEmailId))
+            .where(
+              eq(itemMaintenanceRequests.requesterEmailId, requesterEmailId),
+            )
         : Promise.resolve([{ value: 0 }]),
     ]);
 
@@ -57,7 +61,7 @@ export async function GET(request: NextRequest) {
   }));
 
   return NextResponse.json({
-    sucess: true,
+    success: true,
     data: {
       data,
       total: totalResult[0].value,
