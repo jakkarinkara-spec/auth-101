@@ -90,6 +90,65 @@ null
 
 ---
 
+## Endpoints สำหรับ Item Maintenance Request (IMR)
+
+endpoint นี้เปิดให้ระบบภายนอกดึงข้อมูลได้โดยตรง ไม่ผูกกับ session ของ NextAuth
+
+---
+
+### `GET /api/imr`
+
+คืนรายการ item maintenance request แบบ paginate พร้อมตัวเลขสรุป
+
+**Query parameters**
+
+| Param | Type | จำเป็น | ค่าเริ่มต้น | คำอธิบาย |
+|-------|------|--------|-------------|----------|
+| `page` | number | ไม่ | `1` | หน้าที่ต้องการ |
+| `limit` | number | ไม่ | `20` | จำนวนรายการต่อหน้า |
+| `requesterEmailId` | string | ไม่ | — | ใช้คำนวณ `myRequestCount`; ไม่มี session ผูกกับ user เพราะ endpoint นี้เปิดให้ระบบอื่นเรียกได้โดยตรง ถ้าไม่ส่งมาจะได้ `0` |
+
+**Response** (`200 OK`)
+
+```json
+{
+  "sucess": true,
+  "data": {
+    "data": [
+      {
+        "imrNumber": "IMR-000001",
+        "itemCount": 3,
+        "buyerInfo": [{ "buyer_code": "B001", "buyer_name": "บริษัท เอ จำกัด" }],
+        "requestedAt": "2026-07-01T00:00:00.000Z",
+        "lastUpdatedAt": "2026-07-02T00:00:00.000Z",
+        "requestStatus": "PENDING",
+        "submittedAsRole": "buyer",
+        "requesterEmailId": "someone@example.com",
+        "requestedByUserName": "สมชาย"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "pendingMaintenanceRequestCount": 1,
+    "processedAndCompletedRequestCount": 0,
+    "myRequestCount": 0
+  }
+}
+```
+
+> คีย์ `sucess` (ไม่ใช่ `success`) เป็นชื่อฟิลด์ตามสัญญาเดิมของ interface นี้ ไม่ใช่การพิมพ์ผิด
+
+**นิยามตัวเลขสรุป** (ปรับได้ที่ค่าคงที่ด้านบนของ `app/api/imr/route.ts`)
+
+| ฟิลด์ | นิยาม |
+|-------|-------|
+| `pendingMaintenanceRequestCount` | จำนวนแถวที่ `requestStatus` เป็น `PENDING`, `PROCESSING`, หรือ `REVIEW_REQUESTED` |
+| `processedAndCompletedRequestCount` | จำนวนแถวที่ `requestStatus` เป็น `PROCESSING` หรือ `COMPLETED` |
+| `myRequestCount` | จำนวนแถวที่ `requesterEmailId` ตรงกับ query param `requesterEmailId` |
+
+---
+
 ## Environment variables
 
 | ตัวแปร | จำเป็น | คำอธิบาย |
@@ -119,6 +178,24 @@ null
 | `name` | text | nullable | — |
 | `dayGrow` | text | NOT NULL | — |
 | `createdAt` | timestamp | NOT NULL | `now()` |
+
+### `item_maintenance_requests`
+
+| Column | Type | Constraints | Default |
+|--------|------|-------------|---------|
+| `id` | text | PRIMARY KEY | `crypto.randomUUID()` |
+| `imrNumber` | text | UNIQUE, NOT NULL | — |
+| `itemCount` | integer | NOT NULL | `0` |
+| `buyerInfo` | jsonb (`{ buyer_code, buyer_name }[]`) | nullable | — |
+| `requestStatus` | enum `item_maintenance_request_status` | NOT NULL | `PENDING` |
+| `submittedAsRole` | text | nullable | — |
+| `requesterEmailId` | text | nullable | — |
+| `requestedByUserName` | text | nullable | — |
+| `submittedAt` | timestamp | nullable | — |
+| `lastUpdatedAt` | timestamp | nullable | — |
+| `createdAt` | timestamp | NOT NULL | `now()` |
+
+**Enum `item_maintenance_request_status`**: `PENDING` \| `PROCESSING` \| `REVIEW_REQUESTED` \| `COMPLETED` \| `FAILED` \| `REJECTED`
 
 ---
 

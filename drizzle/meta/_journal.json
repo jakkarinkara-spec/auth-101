@@ -15,6 +15,13 @@
       "when": 1781702826422,
       "tag": "0001_warm_otto_octavius",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783575173453,
+      "tag": "0002_common_aqueduct",
+      "breakpoints": true
     }
   ]
 }
