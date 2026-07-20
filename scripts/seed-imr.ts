@@ -2,7 +2,79 @@ import "dotenv/config";
 import { db } from "../app/db/index";
 import { itemMaintenanceRequests } from "../app/db/schema";
 
-const rows: (typeof itemMaintenanceRequests.$inferInsert)[] = [
+type ImrRow = typeof itemMaintenanceRequests.$inferInsert;
+
+const STATUSES = [
+  "PENDING",
+  "PROCESSING",
+  "REVIEW_REQUESTED",
+  "COMPLETED",
+  "FAILED",
+  "REJECTED",
+] as const;
+
+const ROLES = ["buyer", "senior_buyer", null] as const;
+
+const BUYER_POOL = [
+  { buyer_code: "B001", buyer_name: "บริษัท เอ จำกัด" },
+  { buyer_code: "B002", buyer_name: "บริษัท บี จำกัด" },
+  { buyer_code: "B003", buyer_name: "บริษัท ซี จำกัด" },
+  { buyer_code: "B004", buyer_name: "บริษัท ดี จำกัด" },
+  { buyer_code: "B005", buyer_name: "บริษัท อี จำกัด" },
+  { buyer_code: "B006", buyer_name: "บริษัท เอฟ จำกัด" },
+  { buyer_code: "B007", buyer_name: "บริษัท จี จำกัด" },
+  { buyer_code: "B008", buyer_name: "บริษัท เอช จำกัด" },
+];
+
+const REQUESTERS = [
+  { email: "jkarapha@cpaxtra.co.th", name: "Jakkarin K." },
+  { email: "somchai@example.com", name: "สมชาย" },
+  { email: "malee@example.com", name: "มาลี" },
+  { email: "anong@example.com", name: "อนงค์" },
+  { email: null, name: null },
+];
+
+function randomInt(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pick<T>(arr: readonly T[]): T {
+  return arr[randomInt(0, arr.length - 1)];
+}
+
+// สุ่มสร้างข้อมูลตัวอย่างเพิ่มเติม ต่อเลขจาก IMR-000007 ที่มีอยู่แล้ว
+function generateRows(count: number, startIndex: number): ImrRow[] {
+  const now = Date.now();
+  return Array.from({ length: count }, (_, i) => {
+    const idx = startIndex + i;
+    const buyerCount = randomInt(0, 3);
+    const buyerInfo =
+      buyerCount > 0
+        ? [...BUYER_POOL]
+            .sort(() => Math.random() - 0.5)
+            .slice(0, buyerCount)
+        : undefined;
+    const requester = pick(REQUESTERS);
+    const submittedAt = new Date(now - randomInt(0, 90) * 24 * 60 * 60 * 1000);
+    const lastUpdatedAt = new Date(
+      submittedAt.getTime() + randomInt(0, 10) * 24 * 60 * 60 * 1000,
+    );
+
+    return {
+      imrNumber: `IMR-${String(idx).padStart(6, "0")}`,
+      itemCount: randomInt(1, 20),
+      buyerInfo,
+      requestStatus: pick(STATUSES),
+      submittedAsRole: pick(ROLES),
+      requesterEmailId: requester.email,
+      requestedByUserName: requester.name,
+      submittedAt,
+      lastUpdatedAt,
+    };
+  });
+}
+
+const curatedRows: ImrRow[] = [
   {
     imrNumber: "IMR-000001",
     itemCount: 3,
@@ -78,7 +150,24 @@ const rows: (typeof itemMaintenanceRequests.$inferInsert)[] = [
     submittedAt: new Date("2026-06-15T10:00:00Z"),
     lastUpdatedAt: new Date("2026-06-16T11:00:00Z"),
   },
+  {
+    imrNumber: "IMR-000007",
+    itemCount: 12,
+    buyerInfo: [
+      { buyer_code: "B001", buyer_name: "บริษัท เอ จำกัด" },
+      { buyer_code: "B002", buyer_name: "บริษัท บี จำกัด" },
+      { buyer_code: "B004", buyer_name: "บริษัท ดี จำกัด" },
+    ],
+    requestStatus: "PENDING",
+    submittedAsRole: "buyer",
+    requesterEmailId: "jkarapha@cpaxtra.co.th",
+    requestedByUserName: "Jakkarin K.",
+    submittedAt: new Date("2026-07-14T03:00:00Z"),
+    lastUpdatedAt: new Date("2026-07-14T03:00:00Z"),
+  },
 ];
+
+const rows: ImrRow[] = [...curatedRows, ...generateRows(100, 8)];
 
 async function main() {
   const inserted = await db
