@@ -8,11 +8,11 @@ export async function PATCH() {
 export async function GET() {
   return NextResponse.json({
     "success": true,
-    "data": [
+    "data":
       {
-        "itemMaintenanceRequestNumber": "IMR-20260717-000145-B01",
+        "itemMaintenanceRequestNumber": "IMR-000455",
         "requestedByUserId": "buyer-5002",
-        "requestedByUserName": "Anutsara S.",
+        "requestedByUserName": "Jakkarin JakJa.",
         "requestedAt": "2026-07-17T03:25:42.000Z",
         "requestedAction": "UPDATE",
         "requestStatus": "PENDING",
@@ -22,7 +22,7 @@ export async function GET() {
             "itemDesc": "ARO ORANGE JUICE 100% 1L",
             "itemDescSecondary": "น้ำส้มอโร่ 100% ขนาด 1 ลิตร",
             "currentValue": {
-              "displayStatus": "A",
+              "displayStatus": "Not Display",
               "strategicProduct": "No",
               "ownBrand": "Yes",
               "DisplayFormat": "Normal Shelf",
@@ -45,17 +45,17 @@ export async function GET() {
               "itemAmountInPdqHeight": "1",
               "muImages": {
                 "front": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000005_MU.1.jpg",
-                "top": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000005_MU.3.jpg",
+                "top": "https://media-mspuat.cpaxtra.co.th/planogram/test.3.jpg",
                 "side": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000005_MU.2.jpg"
               },
               "pdqImages": {
                 "front": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000005_PDQ.1.jpg",
                 "top": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000005_PDQ.3.jpg",
-                "side": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000005_PDQ.2.jpg"
+                "side": "https://media-mspuat.cpaxtra.co.th/planogram/test.2.jpg"
               }
             },
             "newValue": {
-              "displayStatus": "A",
+              "displayStatus": "Display",
               "strategicProduct": "Yes",
               "ownBrand": "Yes",
               "DisplayFormat": "Normal Shelf",
@@ -77,14 +77,14 @@ export async function GET() {
               "itemAmountInPdqLength": "3",
               "itemAmountInPdqHeight": "1",
               "muImages": {
-                "front": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000004_MU_1.jpg",
-                "top": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000004_MU_2.jpg",
-                "side": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000004_MU_3.jpg"
+                "front": "",
+                "top": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202605000090_MU.1.jpg",
+                "side": ""
               },
               "pdqImages": {
-                "front": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000004_PDQ_1.jpg",
-                "top": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000004_PDQ_2.jpg",
-                "side": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000004_PDQ_3.jpg"
+                "front": "",
+                "top": "",
+                "side": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202605000090_MU.1.jpg"
               }
             },
             "itemRequestStatus": "PENDING"
@@ -94,7 +94,7 @@ export async function GET() {
             "itemDesc": "KELLOGS CORN FLAKES 500G",
             "itemDescSecondary": "เคลล็อกส์ คอร์นเฟลกส์ ขนาด 500 กรัม",
             "currentValue": {
-              "displayStatus": "A",
+              "displayStatus": "Display",
               "strategicProduct": "No",
               "ownBrand": "No",
               "DisplayFormat": "Normal Shelf",
@@ -127,7 +127,7 @@ export async function GET() {
               }
             },
             "newValue": {
-              "displayStatus": "A",
+              "displayStatus": "Display",
               "strategicProduct": "No",
               "ownBrand": "No",
               "DisplayFormat": "Normal Shelf",
@@ -149,13 +149,13 @@ export async function GET() {
               "itemAmountInPdqLength": "2",
               "itemAmountInPdqHeight": "1",
               "muImages": {
-                "front": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000005_MU_1.jpg",
-                "top": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000005_MU_2.jpg",
+                "front": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202606000039_MU.1.jpg",
+                "top": "",
                 "side": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000005_MU_3.jpg"
               },
               "pdqImages": {
                 "front": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000005_PDQ_1.jpg",
-                "top": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000005_PDQ_2.jpg",
+                "top": "",
                 "side": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000005_PDQ_3.jpg"
               }
             },
@@ -166,7 +166,7 @@ export async function GET() {
             "itemDesc": "LAYS CLASSIC POTATO CHIPS 158G",
             "itemDescSecondary": "เลย์ มันฝรั่งทอดกรอบ รสคลาสสิก 158 กรัม",
             "currentValue": {
-              "displayStatus": "A",
+              "displayStatus": "Display",
               "strategicProduct": "Yes",
               "ownBrand": "No",
               "DisplayFormat": "Normal Shelf",
@@ -199,7 +199,7 @@ export async function GET() {
               }
             },
             "newValue": {
-              "displayStatus": "A",
+              "displayStatus": "Not Display",
               "strategicProduct": "Yes",
               "ownBrand": "No",
               "DisplayFormat": "Hanging Display",
@@ -221,14 +221,14 @@ export async function GET() {
               "itemAmountInPdqLength": "",
               "itemAmountInPdqHeight": "",
               "muImages": {
-                "front": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000007_MU_1.jpg",
+                "front": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202605000090_MU.1.jpg",
                 "top": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000007_MU_2.jpg",
                 "side": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202607000007_MU_3.jpg"
               },
               "pdqImages": {
                 "front": "",
                 "top": "",
-                "side": ""
+                "side": "https://media-mspuat.cpaxtra.co.th/planogram/N_N202605000090_MU.1.jpg"
               }
             },
             "itemRequestStatus": "REVIEW_REQUESTED"
@@ -238,7 +238,7 @@ export async function GET() {
             "itemDesc": "NESCAFE RED CUP INSTANT COFFEE 180G",
             "itemDescSecondary": "เนสกาแฟ เรดคัพ กาแฟสำเร็จรูป 180 กรัม",
             "currentValue": {
-              "displayStatus": "A",
+              "displayStatus": "Display",
               "strategicProduct": "No",
               "ownBrand": "No",
               "DisplayFormat": "Normal Shelf",
@@ -271,7 +271,7 @@ export async function GET() {
               }
             },
             "newValue": {
-              "displayStatus": "A",
+              "displayStatus": "Display",
               "strategicProduct": "No",
               "ownBrand": "No",
               "DisplayFormat": "Normal Shelf",
@@ -310,7 +310,7 @@ export async function GET() {
             "itemDesc": "ARO TOMATO KETCHUP 1KG",
             "itemDescSecondary": "ซอสมะเขือเทศอโร่ ขนาด 1 กิโลกรัม",
             "currentValue": {
-              "displayStatus": "A",
+              "displayStatus": "Display",
               "strategicProduct": "No",
               "ownBrand": "Yes",
               "DisplayFormat": "Normal Shelf",
@@ -343,7 +343,7 @@ export async function GET() {
               }
             },
             "newValue": {
-              "displayStatus": "D",
+              "displayStatus": "Display",
               "strategicProduct": "No",
               "ownBrand": "Yes",
               "DisplayFormat": "Normal Shelf",
@@ -382,11 +382,68 @@ export async function GET() {
         "actionByUserId": "",
         "actionByUserName": "",
         "actionAt": "",
-        "submittedAsRole": "Buyer"
+        "submittedAsRole": "Byer"
       }
-    ],
+    ,
     "error": ""
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
