@@ -39,7 +39,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="relative min-h-dvh bg-[#030712] overflow-hidden flex items-center justify-center px-4 py-12">
+    <div className="relative min-h-dvh overflow-hidden bg-slate-50 flex items-center justify-center px-4 py-12 dark:bg-[#030712]">
       {/* Background orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 right-0 h-80 w-80 rounded-full bg-violet-500/15 blur-3xl" />
@@ -55,14 +55,14 @@ export default function RegisterPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Create your account</h1>
-          <p className="mt-1 text-sm text-zinc-400">Get started in just a few seconds.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Create your account</h1>
+          <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">Get started in just a few seconds.</p>
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-8 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-2xl border border-black/10 bg-black/[0.02] p-8 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
           {error && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
               <svg className="mt-0.5 h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
@@ -72,7 +72,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="flex flex-col gap-2">
-              <label htmlFor="name" className="text-sm font-medium text-zinc-300">
+              <label htmlFor="name" className="text-sm font-medium text-slate-700 dark:text-zinc-300">
                 Name
               </label>
               <input
@@ -83,12 +83,12 @@ export default function RegisterPage() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 autoComplete="name"
-                className="h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:border-violet-500/50 focus:bg-white/[0.07] focus:ring-2 focus:ring-violet-500/20"
+                className="h-11 rounded-xl border border-black/10 bg-black/[0.03] px-3 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-violet-500/50 focus:bg-black/[0.05] focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-zinc-600 dark:focus:bg-white/[0.07]"
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <label htmlFor="email" className="text-sm font-medium text-zinc-300">
+              <label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-zinc-300">
                 Email
               </label>
               <input
@@ -99,12 +99,12 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:border-violet-500/50 focus:bg-white/[0.07] focus:ring-2 focus:ring-violet-500/20"
+                className="h-11 rounded-xl border border-black/10 bg-black/[0.03] px-3 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-violet-500/50 focus:bg-black/[0.05] focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-zinc-600 dark:focus:bg-white/[0.07]"
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <label htmlFor="password" className="text-sm font-medium text-zinc-300">
+              <label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-zinc-300">
                 Password
               </label>
               <input
@@ -116,9 +116,9 @@ export default function RegisterPage() {
                 required
                 minLength={6}
                 autoComplete="new-password"
-                className="h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:border-violet-500/50 focus:bg-white/[0.07] focus:ring-2 focus:ring-violet-500/20"
+                className="h-11 rounded-xl border border-black/10 bg-black/[0.03] px-3 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-violet-500/50 focus:bg-black/[0.05] focus:ring-2 focus:ring-violet-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-zinc-600 dark:focus:bg-white/[0.07]"
               />
-              <p className="text-xs text-zinc-600">Minimum 6 characters.</p>
+              <p className="text-xs text-slate-500 dark:text-zinc-600">Minimum 6 characters.</p>
             </div>
 
             <button
@@ -139,9 +139,9 @@ export default function RegisterPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-zinc-500">
+        <p className="mt-6 text-center text-sm text-slate-500 dark:text-zinc-500">
           Already have an account?{' '}
-          <Link href="/login" className="font-medium text-violet-400 transition-colors hover:text-violet-300">
+          <Link href="/login" className="font-medium text-violet-600 transition-colors hover:text-violet-500 dark:text-violet-400 dark:hover:text-violet-300">
             Sign in
           </Link>
         </p>

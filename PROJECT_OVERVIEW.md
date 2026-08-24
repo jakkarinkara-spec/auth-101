@@ -33,7 +33,8 @@ auth-101/
 │   ├── layout.tsx                  # Root layout — Geist font + global Navbar
 │   │
 │   ├── components/
-│   │   └── navbar.tsx              # Global Navbar — auth-aware (sign in / sign out)
+│   │   ├── navbar.tsx              # Global Navbar — auth-aware (sign in / sign out) + theme toggle
+│   │   └── theme-toggle.tsx        # Light/dark theme toggle button (Client Component)
 │   │
 │   ├── login/page.tsx              # Login form (Client Component)
 │   ├── register/page.tsx           # Register form (Client Component)
@@ -112,10 +113,10 @@ AUTH_SECRET=    # 64-char hex key สำหรับ sign JWT
 
 ## UI Design
 
-**Style:** Glassmorphism Dark Mode  
-**Background:** `#030712` (deep navy-black) + gradient orbs  
-**Cards:** `backdrop-blur-xl` + `bg-white/[0.04]` + `border-white/10`  
-**Accent:** Indigo → Violet gradient  
+**Style:** Glassmorphism — รองรับทั้ง Light และ Dark Mode  
+**Background:** Light `#f8fafc` / Dark `#030712` — ทั้งคู่มี gradient orbs  
+**Cards:** `backdrop-blur-xl` + `bg-black/[0.02]` (light) / `bg-white/[0.04]` (dark) + border คู่กัน  
+**Accent:** Indigo → Violet gradient (ใช้เหมือนกันทั้ง 2 theme)  
 
 | หน้า | Style note |
 |------|-----------|
@@ -123,7 +124,16 @@ AUTH_SECRET=    # 64-char hex key สำหรับ sign JWT
 | Login | Indigo accent, glass card, loading spinner |
 | Register | Violet accent, glass card, password helper text |
 | Dashboard | Server Component, profile + session info |
-| Navbar (global) | Auth-aware — sign out เมื่อ login, sign in เมื่อไม่ได้ login |
+| Navbar (global) | Auth-aware — sign out เมื่อ login, sign in เมื่อไม่ได้ login + ปุ่มสลับ theme |
+
+### Light/Dark Mode
+
+- ผู้ใช้สลับ theme ได้ผ่านปุ่มไอคอน sun/moon ใน Navbar (`app/components/theme-toggle.tsx`)
+- ค่า theme เก็บใน `localStorage` (key: `theme`) — จำค่าไว้ข้าม session
+- ถ้าไม่มีค่าเก็บไว้ จะ fallback ไปตาม `prefers-color-scheme` ของระบบ
+- ใช้ attribute `data-theme="light" | "dark"` บน `<html>` แทนการใช้ class — ตาม pattern ที่ Next.js 16 docs แนะนำสำหรับ [preventing flash before hydration](node_modules/next/dist/docs/01-app/02-guides/preventing-flash-before-hydration.md)
+- มี inline `<script>` ใน `<head>` (ใน `app/layout.tsx`) ที่ set attribute ก่อน browser paint — ป้องกัน flash ของ theme ผิดตอนโหลดหน้า
+- Tailwind v4 ผูก `dark:` variant เข้ากับ `[data-theme="dark"]` ผ่าน `@custom-variant` ใน `app/globals.css` (ปกติ Tailwind v4 จะผูก `dark:` กับ `prefers-color-scheme` เท่านั้น ถ้าไม่ประกาศ custom variant)
 
 ---
 
@@ -136,3 +146,4 @@ AUTH_SECRET=    # 64-char hex key สำหรับ sign JWT
 - proxy ทำหน้าที่แค่ตรวจ session cookie (fast check) ส่วน session จริงยัง validate ใน Server Component อีกชั้น
 - `app/components/navbar.tsx` เป็น async Server Component ตรวจ session ด้วย `auth()` — แสดง sign out เมื่อ login อยู่, แสดง sign in + get started เมื่อยังไม่ login
 - Navbar เป็น `fixed` (position) — dashboard page ใช้ `pt-16` เพื่อ offset ให้ content ไม่ถูกทับ
+- `app/components/theme-toggle.tsx` เป็น Client Component แต่ไม่ใช้ React state เพื่อ toggle icon — ใช้ CSS (`dark:hidden` / `dark:block`) ล้วนๆ เพื่อเลี่ยง hydration mismatch ระหว่าง server default กับค่าที่ script แก้ไว้ก่อน paint
