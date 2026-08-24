@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export async function PATCH() {
+export async function POST() {
   return NextResponse.json({
   "returnCode" : "OK",
   "returnMessage" : "Completed Successfully",
