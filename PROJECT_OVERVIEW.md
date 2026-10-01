@@ -45,11 +45,19 @@ auth-101/
 │   │       ├── [...nextauth]/      # NextAuth catch-all handler
 │   │       └── register/           # POST /api/auth/register
 │   │
+│   ├── items/                      # Mock API routes (คืนค่า JSON ตายตัว ไม่ต่อ DB / ไม่มี auth)
+│   │   ├── SubmitSup/[id]/route.ts                      # POST → { returnCode: "OK", tranId }
+│   │   ├── planogram-maintenance-requests/[imrId]/route.ts  # GET → รายการ IMR + items (current/new value)
+│   │   └── planogram-requests/[imrId]/route.ts          # PATCH → { success: true }, POST → ข้อมูล supplier ตัวอย่าง
+│   │
 │   └── db/
-│       ├── index.ts                # Drizzle DB client
+│       ├── index.ts                # Drizzle DB client (neon-http)
 │       └── schema.ts               # Table definitions
 │
-└── drizzle/                        # SQL migrations
+├── drizzle/                        # SQL migrations (0000–0003)
+├── docs/                           # เอกสาร (Diátaxis): tutorials / how-to / reference / explanation
+├── REDESIGN.md                     # บันทึกการ redesign UI (glassmorphism + light/dark)
+└── AGENTS.md / CLAUDE.md           # กฎสำหรับ AI agent (รวมกฎให้อัปเดตไฟล์นี้)
 ```
 
 ---
@@ -70,8 +78,11 @@ auth-101/
 |--------|------|------|
 | id | text (UUID) | Primary Key |
 | name | text | Nullable |
-| dayGrow | text | Required |
+| dayGrow | integer | Required (`day_grow`) |
 | createdAt | timestamp | Auto |
+
+> Migration `0002` เคยสร้างตาราง `item_maintenance_requests` (+ enum) แต่ `0003` ลบทิ้งแล้ว — ปัจจุบันมีแค่ `users` และ `crops`
+> `schema.ts` ยัง import `jsonb`, `pgEnum` ไว้โดยไม่ได้ใช้
 
 ---
 
@@ -106,8 +117,13 @@ Route Protection (2 layers)
 
 ```env
 DATABASE_URL=   # Neon PostgreSQL connection string
-AUTH_SECRET=    # 64-char hex key สำหรับ sign JWT
+AUTH_SECRET=    # 64-char hex key สำหรับ sign JWT (NextAuth v5 ต้องใช้ชื่อนี้)
 ```
+
+- ถ้าไม่ตั้ง `AUTH_SECRET` จะเจอ error `MissingSecret` ที่ `<Navbar />` ใน `app/layout.tsx` (เพราะเรียก `auth()`)
+- `.env` ยังมี `BETTER_AUTH_SECRET` ค้างอยู่ ซึ่งโปรเจคนี้ไม่ได้ใช้ (ไม่ได้ใช้ Better Auth) — ลบได้
+- แก้ `.env` แล้วต้อง restart dev server
+- สร้าง secret ใหม่ได้ด้วย `npx auth secret` (ดู `docs/how-to/rotate-auth-secret.md`)
 
 ---
 
@@ -137,8 +153,18 @@ AUTH_SECRET=    # 64-char hex key สำหรับ sign JWT
 
 ---
 
+## Scripts
+
+| คำสั่ง | หน้าที่ |
+|--------|--------|
+| `npm run dev` / `build` / `start` / `lint` | คำสั่งมาตรฐานของ Next.js |
+| `npm run seed:imr` | รัน `scripts/seed-imr.ts` — **ไฟล์นี้ไม่มีอยู่แล้ว** (ตาราง IMR ถูกลบใน migration 0003) script นี้จึงรันไม่ได้ |
+
+---
+
 ## หมายเหตุ
 
+- Route ใน `app/items/**` เป็น mock endpoint ที่คืน JSON ตายตัว (ข้อมูล planogram/supplier ตัวอย่าง) ไม่ได้ผ่าน `proxy.ts` และไม่ได้ตรวจ session
 - ตาราง `crops` ดูเหมือนเป็น code ทดลองที่ยังไม่ได้ใช้งานจริง
 - ใช้ JWT session (ไม่ใช่ database session)
 - `app/dashboard/page.tsx` เป็น Server Component ดึง session ด้วย `auth()` และ redirect ไป `/login` ถ้ายังไม่ได้ login
