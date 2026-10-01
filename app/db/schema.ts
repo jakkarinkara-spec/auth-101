@@ -1,4 +1,6 @@
-import { pgTable, text, timestamp, integer, jsonb, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+
+export const roleEnum = pgEnum("user_role", ["user", "admin"]);
 
 export const usersTable = pgTable("users", {
   id: text("id")
@@ -8,6 +10,7 @@ export const usersTable = pgTable("users", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(), // เก็บ hash ไม่เก็บ plain text
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  role: roleEnum("role").default("user").notNull(),
 });
 
 export const crops = pgTable("crops", {
