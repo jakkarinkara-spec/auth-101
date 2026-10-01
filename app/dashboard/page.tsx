@@ -1,14 +1,37 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
+import { db } from '@/app/db/index';
+import { usersTable } from '@/app/db/schema';
+import { eq } from 'drizzle-orm';
 
 export default async function DashboardPage() {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect('/login');
   }
 
-  const user = session.user;
+  // ดึงข้อมูลล่าสุดจาก DB (เลือกเฉพาะคอลัมน์ที่แสดง ไม่ดึง password)
+  const [user] = await db
+    .select({
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      role: usersTable.role,
+      createdAt: usersTable.createdAt,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, session.user.id));
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  const joinedAt = user.createdAt.toLocaleDateString('th-TH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
   const initials = (user.name ?? user.email ?? '?')
     .split(' ')
     .map((n: string) => n[0])
@@ -52,6 +75,17 @@ export default async function DashboardPage() {
                 <p className="text-xs text-slate-500 dark:text-zinc-500">User ID</p>
                 <p className="mt-0.5 truncate font-mono text-xs text-slate-700 dark:text-zinc-300">{user.id}</p>
               </div>
+              <div className="grid w-full grid-cols-2 gap-2">
+                <div className="rounded-xl border border-black/5 bg-black/[0.02] px-4 py-3 dark:border-white/5 dark:bg-white/[0.03]">
+                  <p className="text-xs text-slate-500 dark:text-zinc-500">Role</p>
+                  <p className="mt-0.5 text-xs font-medium capitalize text-slate-700 dark:text-zinc-300">{user.role}</p>
+                </div>
+                <div className="rounded-xl border border-black/5 bg-black/[0.02] px-4 py-3 dark:border-white/5 dark:bg-white/[0.03]">
+                  <p className="text-xs text-slate-500 dark:text-zinc-500">Joined</p>
+                  <p className="mt-0.5 text-xs font-medium text-slate-700 dark:text-zinc-300">{joinedAt}</p>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -74,6 +108,7 @@ export default async function DashboardPage() {
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                     Authenticated
                   </span>
+                  
                 </div>
               </div>
             </div>
