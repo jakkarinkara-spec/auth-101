@@ -35,14 +35,15 @@ auth-101/
 │   ├── components/
 │   │   ├── navbar.tsx              # Global Navbar — auth-aware (sign in / sign out) + theme toggle
 │   │   ├── theme-toggle.tsx        # Light/dark theme toggle button (Client Component)
-│   │   └── farm-sidebar.tsx        # Sidebar เมนูหลัก "AgriHub" (Client) — Overview + กลุ่ม Farm Manage (Crops / Plots) พับได้; จอเล็กเป็นแถบเมนูแนวนอน
+│   │   ├── farm-sidebar.tsx        # Sidebar เมนูหลัก "AgriHub" (Client) — Overview + กลุ่ม Farm Manage (Crops / Plots) พับได้; จอเล็กเป็นแถบเมนูแนวนอน
+│   │   └── modal.tsx               # ปุ่ม + popup (<dialog>) — ฟอร์มข้างในปิด popup ได้ผ่าน useModalClose()
 │   │
 │   ├── login/page.tsx              # Login form (Client Component)
 │   ├── register/page.tsx           # Register form (Client Component)
 │   ├── dashboard/layout.tsx        # Layout ของ /dashboard/* — ใส่ FarmSidebar + เว้นที่ (lg:pl-64)
 │   ├── dashboard/page.tsx          # Dashboard (Server Component)
-│   ├── dashboard/crops/            # หน้า Crops: page.tsx (Server — list) + create-crop-form.tsx (Client — form)
-│   ├── dashboard/plots/            # หน้าแปลงปลูก: page.tsx (Server — list + วันเก็บเกี่ยว) + create-plot-form.tsx (Client — form)
+│   ├── dashboard/crops/            # หน้า Crops: page.tsx (Server — list + ปุ่ม "New crop" เปิด popup) + create-crop-form.tsx (Client — form ใน popup)
+│   ├── dashboard/plots/            # หน้าแปลงปลูก: page.tsx (Server — list + วันเก็บเกี่ยว + ปุ่ม "New plot" เปิด popup) + create-plot-form.tsx (Client — form ใน popup)
 │   │
 │   ├── api/
 │   │   └── auth/
@@ -146,18 +147,20 @@ AUTH_SECRET=    # 64-char hex key สำหรับ sign JWT (NextAuth v5 ต�
 
 ## UI Design
 
-**Style:** Glassmorphism — รองรับทั้ง Light และ Dark Mode  
-**Background:** Light `#f8fafc` / Dark `#030712` — ทั้งคู่มี gradient orbs  
-**Cards:** `backdrop-blur-xl` + `bg-black/[0.02]` (light) / `bg-white/[0.04]` (dark) + border คู่กัน  
-**Accent:** Indigo → Violet gradient (ใช้เหมือนกันทั้ง 2 theme)  
+**Style:** Modern minimal — รองรับทั้ง Light และ Dark Mode  
+**Background:** พื้นเรียบ Light `#fafafa` / Dark `#09090b`  
+**Cards:** พื้นขาว / `#18181b` + เส้นขอบบาง 1px + มุมโค้ง + เงาอ่อน  
+**ปุ่มหลัก:** สีดำ (light) / สีขาว (dark) — ปุ่มรองเป็นพื้น card + เส้นขอบ  
+**Highlight:** เขียว emerald ใช้เล็กน้อย (badge, ชื่อผู้ใช้, วันเก็บเกี่ยว)  
+**Font:** Geist Sans ทั้งหมด
 
-| หน้า | Style note |
-|------|-----------|
-| Homepage | Landing page — hero, badge, feature cards |
-| Login | Indigo accent, glass card, loading spinner |
-| Register | Violet accent, glass card, password helper text |
-| Dashboard | Server Component, profile + session info |
-| Navbar (global) | Auth-aware — sign out เมื่อ login, sign in เมื่อไม่ได้ login + ปุ่มสลับ theme |
+### Design system (`app/globals.css`)
+
+- สีทั้งหมดเป็น CSS variables (`--page`, `--panel`, `--panel-2`, `--line`, `--ink`, `--ink-muted`, `--accent`, `--highlight`, `--danger`) ที่ `:root` (light) และ `[data-theme="dark"]` — expose เป็น Tailwind color ด้วย เช่น `text-ink`, `text-ink-muted`, `bg-accent`, `text-highlight`, `border-line`
+- เพราะสีเปลี่ยนตาม theme ผ่าน variable แทบไม่ต้องเขียน `dark:` ในหน้าต่างๆ
+- Component classes (`@layer components`): `ui-panel`, `ui-panel-title`, `ui-bar`, `ui-label`, `ui-input`, `ui-btn` (+ `ui-btn-secondary`), `ui-row`, `ui-badge` (+ `ui-badge-secondary`, `ui-badge-muted`), `ui-error`, `ui-link`, `ui-nav` (+ `ui-nav-active`)
+- `color-scheme` ตั้งตาม theme และ `option` ใช้สีทึบจาก token — dropdown / date picker จึงอ่านออกทั้ง 2 theme
+- ฟอร์มสร้าง crop / แปลงปลูก เปิดเป็น popup ผ่าน `app/components/modal.tsx`
 
 ### Light/Dark Mode
 

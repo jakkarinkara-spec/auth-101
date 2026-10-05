@@ -41,10 +41,9 @@ function NavIcon({ d }: { d: string }) {
   );
 }
 
-const baseItem = 'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all';
-const idleItem =
-  'text-slate-600 hover:bg-black/5 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white';
-const activeItem = 'bg-gradient-to-r from-indigo-500/15 to-violet-500/15 text-indigo-700 dark:text-indigo-300';
+const baseItem = 'ui-nav';
+const idleItem = '';
+const activeItem = 'ui-nav-active';
 
 function SidebarGroup({ group, isActive }: { group: NavGroup; isActive: (href: string) => boolean }) {
   const [open, setOpen] = useState(true);
@@ -56,7 +55,7 @@ function SidebarGroup({ group, isActive }: { group: NavGroup; isActive: (href: s
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className={`${baseItem} w-full ${hasActiveChild ? 'text-slate-900 dark:text-white' : idleItem}`}
+        className={`${baseItem} w-full ${hasActiveChild ? 'text-highlight' : idleItem}`}
       >
         <NavIcon d={group.icon} />
         <span className="flex-1 text-left">{group.label}</span>
@@ -71,12 +70,12 @@ function SidebarGroup({ group, isActive }: { group: NavGroup; isActive: (href: s
         </svg>
       </button>
       {open && (
-        <div className="ml-5 mt-1 flex flex-col gap-1 border-l border-black/10 pl-3 dark:border-white/10">
+        <div className="ml-5 mt-1 flex flex-col gap-1 border-l border-line pl-3">
           {group.children.map((child) => (
             <Link
               key={child.href}
               href={child.href}
-              className={`${baseItem} py-1.5 ${isActive(child.href) ? activeItem : idleItem}`}
+              className={`${baseItem} py-1 ${isActive(child.href) ? activeItem : idleItem}`}
             >
               {child.label}
             </Link>
@@ -96,14 +95,14 @@ export default function FarmSidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="fixed bottom-0 left-0 top-16 z-40 hidden w-64 flex-col border-r border-black/5 bg-slate-50/80 px-4 py-6 backdrop-blur-xl dark:border-white/5 dark:bg-[#030712]/80 lg:flex">
+      <aside className="ui-bar fixed bottom-0 left-0 top-16 z-40 hidden w-64 flex-col border-r px-4 py-6 lg:flex">
         <div className="mb-6 flex items-center gap-2.5 px-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-accent-ink">
             <NavIcon d={ICONS.hub} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">{APP_NAME}</p>
-            <p className="text-xs text-slate-500 dark:text-zinc-500">{APP_TAGLINE}</p>
+            <p className="text-sm font-semibold leading-tight text-ink">{APP_NAME}</p>
+            <p className="text-xs text-ink-muted">{APP_TAGLINE}</p>
           </div>
         </div>
         <nav className="flex flex-col gap-1">
@@ -125,12 +124,12 @@ export default function FarmSidebar() {
       </aside>
 
       {/* Mobile tab bar — แสดงเมนูย่อยทั้งหมดเรียงแนวนอน */}
-      <nav className="fixed left-0 right-0 top-16 z-40 flex h-12 items-center gap-1 overflow-x-auto border-b border-black/5 bg-slate-50/80 px-4 backdrop-blur-xl dark:border-white/5 dark:bg-[#030712]/80 lg:hidden">
+      <nav className="ui-bar fixed left-0 right-0 top-16 z-40 flex h-12 items-center gap-1 overflow-x-auto border-b px-4 lg:hidden">
         {NAV.flatMap((entry) => (isGroup(entry) ? entry.children : [entry])).map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`${baseItem} whitespace-nowrap ${isActive(item.href) ? activeItem : idleItem}`}
+            className={`${baseItem} whitespace-nowrap py-1 ${isActive(item.href) ? activeItem : idleItem}`}
           >
             {item.label}
           </Link>

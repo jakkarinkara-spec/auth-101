@@ -24,30 +24,24 @@ function LoginForm() {
     };
 
     return (
-        <div className="relative min-h-dvh overflow-hidden bg-slate-50 flex items-center justify-center px-4 py-12 dark:bg-[#030712]">
-            {/* Background orbs */}
-            <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                <div className="absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-indigo-500/15 blur-3xl" />
-                <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
-                <div className="absolute right-0 top-1/2 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl" />
-            </div>
+        <div className="relative min-h-dvh flex items-center justify-center px-4 py-24">
 
             <div className="relative z-10 w-full max-w-sm">
                 {/* Header */}
                 <div className="mb-8 flex flex-col items-center">
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
-                        <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-accent text-accent-ink shadow-sm">
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Welcome back</h1>
-                    <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">Sign in to your account to continue.</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-ink">Welcome back</h1>
+                    <p className="mt-1 text-sm text-ink-muted">Sign in to your account to continue.</p>
                 </div>
 
                 {/* Card */}
-                <div className="rounded-2xl border border-black/10 bg-black/[0.02] p-8 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
+                <div className="ui-panel p-8">
                     {error && (
-                        <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+                        <div className="ui-error mb-5 flex items-start gap-2.5 px-4 py-3 text-sm">
                             <svg className="mt-0.5 h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
@@ -57,7 +51,7 @@ function LoginForm() {
 
                     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                         <div className="flex flex-col gap-2">
-                            <label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-zinc-300">
+                            <label htmlFor="email" className="ui-label">
                                 Email
                             </label>
                             <input
@@ -68,12 +62,12 @@ function LoginForm() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                                 autoComplete="email"
-                                className="h-11 rounded-xl border border-black/10 bg-black/[0.03] px-3 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500/50 focus:bg-black/[0.05] focus:ring-2 focus:ring-indigo-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-zinc-600 dark:focus:bg-white/[0.07]"
+                                className="ui-input"
                             />
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-zinc-300">
+                            <label htmlFor="password" className="ui-label">
                                 Password
                             </label>
                             <input
@@ -84,14 +78,14 @@ function LoginForm() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                                 autoComplete="current-password"
-                                className="h-11 rounded-xl border border-black/10 bg-black/[0.03] px-3 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500/50 focus:bg-black/[0.05] focus:ring-2 focus:ring-indigo-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-zinc-600 dark:focus:bg-white/[0.07]"
+                                className="ui-input"
                             />
                         </div>
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="mt-1 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                            className="ui-btn mt-1 w-full"
                         >
                             {loading ? (
                                 <>
@@ -106,9 +100,9 @@ function LoginForm() {
                     </form>
                 </div>
 
-                <p className="mt-6 text-center text-sm text-slate-500 dark:text-zinc-500">
+                <p className="mt-6 text-center text-sm text-ink-muted">
                     Don&apos;t have an account?{' '}
-                    <Link href="/register" className="font-medium text-indigo-600 transition-colors hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                    <Link href="/register" className="ui-link">
                         Create one
                     </Link>
                 </p>

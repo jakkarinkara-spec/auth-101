@@ -2,17 +2,17 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useModalClose } from '@/app/components/modal';
 
 const inputClass =
-  'h-11 rounded-xl border border-black/10 bg-black/[0.03] px-3 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500/50 focus:bg-black/[0.05] focus:ring-2 focus:ring-indigo-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-zinc-600 dark:focus:bg-white/[0.07] dark:[color-scheme:dark]';
-// option ใน dropdown แสดงด้วย popup ของ browser ไม่รับสีโปร่งใสจาก select — ต้องกำหนดพื้นหลัง/สีตัวอักษรเอง
-const optionClass = 'bg-white text-slate-900 dark:bg-slate-900 dark:text-white';
-const labelClass = 'text-sm font-medium text-slate-700 dark:text-zinc-300';
+  'ui-input';
+const labelClass = 'ui-label';
 
 type CropOption = { id: string; name: string | null; dayGrow: number };
 
 export default function CreatePlotForm({ crops }: { crops: CropOption[] }) {
   const router = useRouter();
+  const closeModal = useModalClose();
   const [name, setName] = useState('');
   const [areaRai, setAreaRai] = useState('');
   const [location, setLocation] = useState('');
@@ -46,6 +46,7 @@ export default function CreatePlotForm({ crops }: { crops: CropOption[] }) {
       setPlantedAt('');
       // ดึงรายการแปลงใหม่จาก Server Component
       router.refresh();
+      closeModal?.();
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -54,11 +55,10 @@ export default function CreatePlotForm({ crops }: { crops: CropOption[] }) {
   };
 
   return (
-    <div className="rounded-2xl border border-black/10 bg-black/[0.02] p-6 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
-      <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-zinc-500">New plot</h2>
+    <>
 
       {error && (
-        <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+        <div className="ui-error mb-5 flex items-start gap-2.5 px-4 py-3 text-sm">
           <svg className="mt-0.5 h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
@@ -109,9 +109,9 @@ export default function CreatePlotForm({ crops }: { crops: CropOption[] }) {
         <div className="flex flex-col gap-2">
           <label htmlFor="cropId" className={labelClass}>Crop</label>
           <select id="cropId" value={cropId} onChange={(e) => setCropId(e.target.value)} className={inputClass}>
-            <option value="" className={optionClass}>— None —</option>
+            <option value="">— None —</option>
             {crops.map((crop) => (
-              <option key={crop.id} value={crop.id} className={optionClass}>
+              <option key={crop.id} value={crop.id}>
                 {crop.name ?? 'Unnamed'} ({crop.dayGrow} days)
               </option>
             ))}
@@ -132,7 +132,7 @@ export default function CreatePlotForm({ crops }: { crops: CropOption[] }) {
         <button
           type="submit"
           disabled={loading}
-          className="mt-1 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+          className="ui-btn mt-1 w-full"
         >
           {loading ? (
             <>
@@ -145,6 +145,6 @@ export default function CreatePlotForm({ crops }: { crops: CropOption[] }) {
           ) : 'Create plot'}
         </button>
       </form>
-    </div>
+    </>
   );
 }

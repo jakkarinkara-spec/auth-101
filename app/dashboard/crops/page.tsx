@@ -4,6 +4,7 @@ import { db } from '@/app/db/index';
 import { crops } from '@/app/db/schema';
 import { desc } from 'drizzle-orm';
 import CreateCropForm from './create-crop-form';
+import Modal from '@/app/components/modal';
 
 export default async function CropsPage() {
   const session = await auth();
@@ -15,36 +16,32 @@ export default async function CropsPage() {
   const cropList = await db.select().from(crops).orderBy(desc(crops.createdAt));
 
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-slate-50 pt-16 dark:bg-[#030712]">
-      {/* Background orbs */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/4 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 h-80 w-80 rounded-full bg-violet-500/10 blur-3xl" />
-      </div>
+    <div className="relative min-h-dvh pt-16">
 
       <main className="relative z-10 mx-auto max-w-5xl px-6 py-12">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Crops</h1>
-          <p className="mt-1 text-slate-600 dark:text-zinc-400">Add a crop and how many days it takes to grow.</p>
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-ink">Crops</h1>
+            <p className="mt-1 text-ink-muted">Add a crop and how many days it takes to grow.</p>
+          </div>
+          <Modal triggerLabel="New crop" title="New crop">
+            <CreateCropForm />
+          </Modal>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-1">
-            <CreateCropForm />
-          </div>
-
-          <div className="lg:col-span-2 rounded-2xl border border-black/10 bg-black/[0.02] p-6 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-zinc-500">
+        <div>
+          <div className="ui-panel p-6">
+            <h2 className="ui-panel-title mb-4">
               All crops ({cropList.length})
             </h2>
             {cropList.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-zinc-500">No crops yet.</p>
+              <p className="text-sm text-ink-muted">No crops yet.</p>
             ) : (
               <ul className="space-y-3">
                 {cropList.map((crop) => (
-                  <li key={crop.id} className="flex items-center justify-between rounded-xl bg-black/[0.02] px-4 py-3 dark:bg-white/[0.03]">
-                    <span className="text-sm text-slate-700 dark:text-zinc-300">{crop.name ?? '—'}</span>
-                    <span className="rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                  <li key={crop.id} className="ui-row flex items-center justify-between px-4 py-3">
+                    <span className="text-sm text-ink">{crop.name ?? '—'}</span>
+                    <span className="ui-badge">
                       {crop.dayGrow} days
                     </span>
                   </li>

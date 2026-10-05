@@ -1,5 +1,7 @@
 # UI/UX Redesign — Auth 101
 
+> **อัปเดต 2026-10-05:** ปัจจุบันใช้ธีม **modern minimal** (ดู "UI Design" ใน `PROJECT_OVERVIEW.md`) — เนื้อหาด้านล่างเป็นบันทึกของ redesign รอบแรก (glassmorphism) เก็บไว้เป็นประวัติ
+
 ## Design System
 
 **Style:** Glassmorphism — Light + Dark Mode  
