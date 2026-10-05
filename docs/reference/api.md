@@ -90,6 +90,33 @@ null
 
 ---
 
+## Endpoints สำหรับ Crops
+
+---
+
+### `POST /api/crops`
+
+สร้าง crop ใหม่ ต้องล็อกอินก่อน (ตรวจ session ด้วย `auth()` ใน route handler)
+
+**Request body**
+
+| Field | Type | จำเป็น | คำอธิบาย |
+|-------|------|--------|----------|
+| `name` | string | ไม่ | ชื่อพืช — ค่าว่างจะเก็บเป็น `null` |
+| `dayGrow` | integer | ใช่ | จำนวนวันที่ใช้ปลูก ต้องเป็นจำนวนเต็ม 1–2147483647 |
+
+**Responses**
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `201 Created` | สร้างสำเร็จ — คืน row ที่สร้าง (`id`, `name`, `dayGrow`, `createdAt`) |
+| `400 Bad Request` | `dayGrow` ไม่ใช่จำนวนเต็มบวก |
+| `401 Unauthorized` | ยังไม่ได้ล็อกอิน |
+
+UI สำหรับสร้างและดูรายการอยู่ที่ `/dashboard/crops`
+
+---
+
 ## Endpoints สำหรับ Item Maintenance Request (IMR)
 
 endpoint นี้เปิดให้ระบบภายนอกดึงข้อมูลได้โดยตรง ไม่ผูกกับ session ของ NextAuth
@@ -174,7 +201,7 @@ endpoint นี้เปิดให้ระบบภายนอกดึง�
 |--------|------|-------------|---------|
 | `id` | text | PRIMARY KEY | `gen_random_uuid()` |
 | `name` | text | nullable | — |
-| `dayGrow` | text | NOT NULL | — |
+| `dayGrow` | integer | NOT NULL | — |
 | `createdAt` | timestamp | NOT NULL | `now()` |
 
 ### `item_maintenance_requests`

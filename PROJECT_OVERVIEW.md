@@ -38,12 +38,14 @@ auth-101/
 │   │
 │   ├── login/page.tsx              # Login form (Client Component)
 │   ├── register/page.tsx           # Register form (Client Component)
-│   ├── dashboard/page.tsx          # Dashboard (Server Component)
+│   ├── dashboard/page.tsx          # Dashboard (Server Component) + ลิงก์ไป Manage crops
+│   ├── dashboard/crops/            # หน้า Crops: page.tsx (Server — list) + create-crop-form.tsx (Client — form)
 │   │
 │   ├── api/
 │   │   └── auth/
 │   │       ├── [...nextauth]/      # NextAuth catch-all handler
 │   │       └── register/           # POST /api/auth/register
+│   │   └── crops/route.ts          # POST /api/crops — สร้าง crop (ต้องล็อกอิน)
 │   │
 │   ├── items/                      # Mock API routes (คืนค่า JSON ตายตัว ไม่ต่อ DB / ไม่มี auth)
 │   │   ├── SubmitSup/[id]/route.ts                      # POST → { returnCode: "OK", tranId }
@@ -73,7 +75,7 @@ auth-101/
 | password | text | bcrypt hash |
 | createdAt | timestamp | Auto |
 
-### `crops` *(ตาราง experimental)*
+### `crops`
 | Column | Type | Note |
 |--------|------|------|
 | id | text (UUID) | Primary Key |
@@ -165,7 +167,7 @@ AUTH_SECRET=    # 64-char hex key สำหรับ sign JWT (NextAuth v5 ต�
 ## หมายเหตุ
 
 - Route ใน `app/items/**` เป็น mock endpoint ที่คืน JSON ตายตัว (ข้อมูล planogram/supplier ตัวอย่าง) ไม่ได้ผ่าน `proxy.ts` และไม่ได้ตรวจ session
-- ตาราง `crops` ดูเหมือนเป็น code ทดลองที่ยังไม่ได้ใช้งานจริง
+- ตาราง `crops` ใช้ที่หน้า `/dashboard/crops` — สร้างผ่าน `POST /api/crops` (route นี้เช็ค `auth()` เองเพราะ `/api/*` ไม่อยู่ใน matcher ของ proxy) ยังไม่มีคอลัมน์ owner ทุก user จึงเห็นรายการเดียวกัน
 - ใช้ JWT session (ไม่ใช่ database session)
 - `app/dashboard/page.tsx` เป็น Server Component ดึง session ด้วย `auth()` และ redirect ไป `/login` ถ้ายังไม่ได้ login
 - Next.js 16 เปลี่ยนชื่อ `middleware.ts` → `proxy.ts` และ function ชื่อ `middleware` → `proxy` (deprecated ใน v16.0.0)

@@ -1,5 +1,6 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { db } from '@/app/db/index';
 import { usersTable } from '@/app/db/schema';
 import { eq } from 'drizzle-orm';
@@ -57,6 +58,12 @@ export default async function DashboardPage() {
             </span>
           </h1>
           <p className="mt-1 text-slate-600 dark:text-zinc-400">You&apos;re successfully signed in.</p>
+          <Link
+            href="/dashboard/crops"
+            className="mt-4 inline-flex h-9 items-center justify-center rounded-lg bg-gradient-to-r from-indigo-500 to-violet-600 px-4 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Manage crops
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
