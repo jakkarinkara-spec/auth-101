@@ -160,6 +160,7 @@ AUTH_SECRET=    # 64-char hex key สำหรับ sign JWT (NextAuth v5 ต�
 | คำสั่ง | หน้าที่ |
 |--------|--------|
 | `npm run dev` / `build` / `start` / `lint` | คำสั่งมาตรฐานของ Next.js |
+| `npm run db:migrate` | รัน `scripts/migrate.ts` — apply migrations ใน `drizzle/` ผ่าน Neon HTTP driver (ไม่ต้องใช้ WebSocket) `vercel-build` ใช้ตัวนี้ก่อน `next build` |
 | `npm run seed:imr` | รัน `scripts/seed-imr.ts` — **ไฟล์นี้ไม่มีอยู่แล้ว** (ตาราง IMR ถูกลบใน migration 0003) script นี้จึงรันไม่ได้ |
 
 ---
