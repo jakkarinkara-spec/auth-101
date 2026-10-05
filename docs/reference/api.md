@@ -117,6 +117,38 @@ UI สำหรับสร้างและดูรายการอยู�
 
 ---
 
+## Endpoints สำหรับแปลงปลูก (Plots)
+
+---
+
+### `POST /api/plots`
+
+สร้างแปลงปลูกใหม่ ต้องล็อกอินก่อน (ตรวจ session ด้วย `auth()` ใน route handler)
+
+**Request body**
+
+| Field | Type | จำเป็น | คำอธิบาย |
+|-------|------|--------|----------|
+| `name` | string | ใช่ | ชื่อแปลง |
+| `areaRai` | string/number | ไม่ | ขนาดแปลง (ไร่) มากกว่า 0 ปัดเป็นทศนิยม 2 ตำแหน่ง |
+| `location` | string | ไม่ | ที่ตั้งแปลง |
+| `cropId` | string | ไม่ | `id` ของ crop ที่มีอยู่จริง |
+| `plantedAt` | string | ไม่ | วันที่ปลูก รูปแบบ `YYYY-MM-DD` |
+
+ค่าว่างของ field ที่ไม่บังคับจะเก็บเป็น `null`
+
+**Responses**
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `201 Created` | สร้างสำเร็จ — คืน row ที่สร้าง |
+| `400 Bad Request` | ไม่มี `name`, `areaRai` ไม่ถูกต้อง, `plantedAt` ไม่ใช่วันที่ หรือ `cropId` ไม่มีอยู่จริง |
+| `401 Unauthorized` | ยังไม่ได้ล็อกอิน |
+
+UI สำหรับสร้างและดูรายการอยู่ที่ `/dashboard/plots` (แสดงวันเก็บเกี่ยวโดยประมาณ = `plantedAt` + `crops.dayGrow`)
+
+---
+
 ## Endpoints สำหรับ Item Maintenance Request (IMR)
 
 endpoint นี้เปิดให้ระบบภายนอกดึงข้อมูลได้โดยตรง ไม่ผูกกับ session ของ NextAuth
@@ -202,6 +234,18 @@ endpoint นี้เปิดให้ระบบภายนอกดึง�
 | `id` | text | PRIMARY KEY | `gen_random_uuid()` |
 | `name` | text | nullable | — |
 | `dayGrow` | integer | NOT NULL | — |
+| `createdAt` | timestamp | NOT NULL | `now()` |
+
+### `plots`
+
+| Column | Type | Constraints | Default |
+|--------|------|-------------|---------|
+| `id` | text | PRIMARY KEY | `crypto.randomUUID()` |
+| `name` | text | NOT NULL | — |
+| `areaRai` | numeric(10,2) | nullable | — |
+| `location` | text | nullable | — |
+| `cropId` | text | nullable, FK → `crops.id` (ON DELETE SET NULL) | — |
+| `plantedAt` | date | nullable | — |
 | `createdAt` | timestamp | NOT NULL | `now()` |
 
 ### `item_maintenance_requests`

@@ -34,18 +34,22 @@ auth-101/
 │   │
 │   ├── components/
 │   │   ├── navbar.tsx              # Global Navbar — auth-aware (sign in / sign out) + theme toggle
-│   │   └── theme-toggle.tsx        # Light/dark theme toggle button (Client Component)
+│   │   ├── theme-toggle.tsx        # Light/dark theme toggle button (Client Component)
+│   │   └── farm-sidebar.tsx        # Sidebar เมนูหลัก "AgriHub" (Client) — Overview + กลุ่ม Farm Manage (Crops / Plots) พับได้; จอเล็กเป็นแถบเมนูแนวนอน
 │   │
 │   ├── login/page.tsx              # Login form (Client Component)
 │   ├── register/page.tsx           # Register form (Client Component)
-│   ├── dashboard/page.tsx          # Dashboard (Server Component) + ลิงก์ไป Manage crops
+│   ├── dashboard/layout.tsx        # Layout ของ /dashboard/* — ใส่ FarmSidebar + เว้นที่ (lg:pl-64)
+│   ├── dashboard/page.tsx          # Dashboard (Server Component)
 │   ├── dashboard/crops/            # หน้า Crops: page.tsx (Server — list) + create-crop-form.tsx (Client — form)
+│   ├── dashboard/plots/            # หน้าแปลงปลูก: page.tsx (Server — list + วันเก็บเกี่ยว) + create-plot-form.tsx (Client — form)
 │   │
 │   ├── api/
 │   │   └── auth/
 │   │       ├── [...nextauth]/      # NextAuth catch-all handler
 │   │       └── register/           # POST /api/auth/register
 │   │   └── crops/route.ts          # POST /api/crops — สร้าง crop (ต้องล็อกอิน)
+│   │   └── plots/route.ts          # POST /api/plots — สร้างแปลงปลูก (ต้องล็อกอิน)
 │   │
 │   ├── items/                      # Mock API routes (คืนค่า JSON ตายตัว ไม่ต่อ DB / ไม่มี auth)
 │   │   ├── SubmitSup/[id]/route.ts                      # POST → { returnCode: "OK", tranId }
@@ -56,7 +60,7 @@ auth-101/
 │       ├── index.ts                # Drizzle DB client (neon-http)
 │       └── schema.ts               # Table definitions
 │
-├── drizzle/                        # SQL migrations (0000–0003)
+├── drizzle/                        # SQL migrations (0000–0005)
 ├── docs/                           # เอกสาร (Diátaxis): tutorials / how-to / reference / explanation
 ├── REDESIGN.md                     # บันทึกการ redesign UI (glassmorphism + light/dark)
 └── AGENTS.md / CLAUDE.md           # กฎสำหรับ AI agent (รวมกฎให้อัปเดตไฟล์นี้)
@@ -83,7 +87,18 @@ auth-101/
 | dayGrow | integer | Required (`day_grow`) |
 | createdAt | timestamp | Auto |
 
-> Migration `0002` เคยสร้างตาราง `item_maintenance_requests` (+ enum) แต่ `0003` ลบทิ้งแล้ว — ปัจจุบันมีแค่ `users` และ `crops`
+### `plots` *(แปลงปลูก)*
+| Column | Type | Note |
+|--------|------|------|
+| id | text (UUID) | Primary Key |
+| name | text | Required |
+| areaRai | numeric(10,2) | Nullable (`area_rai`) — ขนาดแปลงหน่วยไร่ |
+| location | text | Nullable |
+| cropId | text | Nullable (`crop_id`) — FK → `crops.id`, `ON DELETE SET NULL` |
+| plantedAt | date | Nullable (`planted_at`) — วันเก็บเกี่ยว = plantedAt + crops.dayGrow |
+| createdAt | timestamp | Auto |
+
+> Migration `0002` เคยสร้างตาราง `item_maintenance_requests` (+ enum) แต่ `0003` ลบทิ้งแล้ว — ปัจจุบันมี `users`, `crops` และ `plots` (เพิ่มใน `0005`)
 > `schema.ts` ยัง import `jsonb`, `pgEnum` ไว้โดยไม่ได้ใช้
 
 ---

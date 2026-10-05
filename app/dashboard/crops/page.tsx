@@ -1,6 +1,5 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { db } from '@/app/db/index';
 import { crops } from '@/app/db/schema';
 import { desc } from 'drizzle-orm';
@@ -25,10 +24,7 @@ export default async function CropsPage() {
 
       <main className="relative z-10 mx-auto max-w-5xl px-6 py-12">
         <div className="mb-8">
-          <Link href="/dashboard" className="text-sm text-slate-500 transition-colors hover:text-slate-900 dark:text-zinc-500 dark:hover:text-white">
-            ← Dashboard
-          </Link>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">Crops</h1>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Crops</h1>
           <p className="mt-1 text-slate-600 dark:text-zinc-400">Add a crop and how many days it takes to grow.</p>
         </div>
 
