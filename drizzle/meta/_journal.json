@@ -71,6 +71,13 @@
       "when": 1791275288225,
       "tag": "0009_boat_active",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791277862096,
+      "tag": "0010_boat_closures",
+      "breakpoints": true
     }
   ]
 }

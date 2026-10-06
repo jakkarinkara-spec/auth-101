@@ -116,7 +116,7 @@ null
 | `400 Bad Request` | field ไม่ถูกต้อง, วันที่อยู่นอกช่วง, จำนวนคนเกิน, add-on ไม่รู้จัก หรือเรือไม่รับทริปประเภทนั้น |
 | `401 Unauthorized` | ยังไม่ได้ล็อกอิน |
 | `404 Not Found` | ไม่มีเรือที่ `boatId` นี้ |
-| `409 Conflict` | เรือลำนี้มีคนจองวันนั้นแล้ว (unique index `bookings_boat_date_active`) หรือเรือปิดรับจอง (`boats.active = false`) |
+| `409 Conflict` | เรือลำนี้มีคนจองวันนั้นแล้ว (unique index `bookings_boat_date_active`), เรือปิดรับจอง (`boats.active = false`) หรือ admin ปิดรับจองวันนั้น (`boat_closures`) |
 
 UI อยู่ที่ `/boats/[id]` — ถ้ายังไม่ล็อกอิน ปุ่มจองจะพาไป `/login?callbackUrl=/boats/[id]`
 
@@ -205,6 +205,31 @@ UI อยู่ที่ `/admin/boats/new` และ `/admin/boats/[id]` (ล�
 | `404 Not Found` | ไม่มีเรือที่ `id` นี้ |
 
 UI: ปุ่ม "ปิดรับจอง" (กดยืนยันอีกครั้ง) / "เปิดรับจอง" ในตารางเรือหน้า `/admin` และหน้าแก้ไขเรือ
+
+### `POST /api/boats/[id]/closures`
+
+ปิดรับจองเป็นรายวัน (admin เท่านั้น) — หนึ่งแถวต่อวันในตาราง `boat_closures` วันที่ปิดอยู่แล้วข้ามไป (ไม่ error)
+
+**Request body**: `{ "from": "YYYY-MM-DD", "to"?: "YYYY-MM-DD", "reason"?: string }` — ไม่ส่ง `to` = ปิดวันเดียว
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `201 Created` | คืน `{ created, skipped }` (จำนวนวันที่เพิ่มใหม่ / ที่ปิดอยู่แล้ว) |
+| `400 Bad Request` | วันที่ไม่ถูกต้อง, ไม่อยู่ในช่วงพรุ่งนี้ถึง 60 วันข้างหน้า, `to` < `from` หรือเกิน 31 วันต่อครั้ง |
+| `401` / `403` | ยังไม่ได้ล็อกอิน / ไม่ใช่ admin |
+| `404 Not Found` | ไม่มีเรือที่ `id` นี้ |
+
+### `DELETE /api/boats/[id]/closures/[closureId]`
+
+เปิดรับจองวันนั้นกลับ (ลบแถวใน `boat_closures`) — admin เท่านั้น
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `204 No Content` | ลบสำเร็จ |
+| `401` / `403` | ยังไม่ได้ล็อกอิน / ไม่ใช่ admin |
+| `404 Not Found` | ไม่มีวันปิดนี้ของเรือลำนี้ |
+
+UI: หัวข้อ "วันปิดรับจอง" ในหน้า `/admin/boats/[id]`
 
 ---
 

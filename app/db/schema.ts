@@ -67,3 +67,21 @@ export const bookings = pgTable(
   // เรือหนึ่งลำจองได้วันละหนึ่งรายการ (ไม่นับที่ยกเลิก) — กันจองซ้อนแม้ส่งพร้อมกัน เพราะ neon-http ไม่มี transaction
   (t) => [uniqueIndex("bookings_boat_date_active").on(t.boatId, t.tripDate).where(sql`${t.status} <> 'cancelled'`)],
 );
+
+// วันที่เรือปิดรับจอง (admin กำหนด เช่น ซ่อมบำรุง / คลื่นลม / กัปตันไม่ว่าง) — วันละหนึ่งแถวต่อเรือ
+// คำขอจองที่มีอยู่แล้วในวันนั้นไม่ถูกยกเลิกอัตโนมัติ
+export const boatClosures = pgTable(
+  "boat_closures",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    boatId: text("boat_id")
+      .notNull()
+      .references(() => boats.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    reason: text("reason"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("boat_closures_boat_date").on(t.boatId, t.date)],
+);

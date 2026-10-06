@@ -1,6 +1,6 @@
 import { db } from "@/app/db/index";
-import { boats } from "@/app/db/schema";
-import { eq } from "drizzle-orm";
+import { boatClosures, boats } from "@/app/db/schema";
+import { and, eq } from "drizzle-orm";
 import { ADDONS, BOOKING_WINDOW_DAYS, addDays, bangkokToday, isTripType, isYmd, quote, type TripType } from "@/app/lib/boats";
 
 // ตรวจ body ของคำขอจอง แล้วคำนวณราคาใหม่ที่ server — client ส่งมาแค่ตัวเลือก ไม่ส่งราคา
@@ -35,9 +35,18 @@ export async function parseBookingBody(body: unknown): Promise<{ data: BookingDa
 
   if (addons.some((a) => !ADDONS.some((x) => x.id === a))) return { error: "Unknown add-on" };
 
-  const [boat] = await db.select().from(boats).where(eq(boats.id, boatId)).limit(1);
+  const [[boat], [closure]] = await Promise.all([
+    db.select().from(boats).where(eq(boats.id, boatId)).limit(1),
+    db
+      .select({ id: boatClosures.id })
+      .from(boatClosures)
+      .where(and(eq(boatClosures.boatId, boatId), eq(boatClosures.date, tripDate)))
+      .limit(1),
+  ]);
   if (!boat) return { error: "Boat not found", status: 404 };
   if (!boat.active) return { error: "This boat is not accepting bookings", status: 409 };
+  // admin ปิดรับจองวันนี้ไว้ (ซ่อมบำรุง / คลื่นลม ฯลฯ)
+  if (closure) return { error: "This boat is closed on that date", status: 409 };
 
   if (!Number.isInteger(guests) || guests < 1 || guests > boat.seats) {
     return { error: `Guests must be between 1 and ${boat.seats}` };

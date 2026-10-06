@@ -60,6 +60,7 @@ auth-101/
 │   │       ├── page.tsx            # /admin — สถิติ + ตารางคำขอจองกรอง ?status= + ตารางเรือ (ปุ่มเพิ่ม / แก้ไข)
 │   │       ├── booking-actions.tsx # (Client) ยืนยัน / ยกเลิก 2 จังหวะ → PATCH /api/bookings/[id]
 │   │       └── boats/              # new/page.tsx (/admin/boats/new), [id]/page.tsx (/admin/boats/[id]) + boat-form.tsx (Client: POST / PATCH /api/boats)
+│   │                               #   + closures.tsx (Client: เพิ่มช่วงวันปิด / เปิดกลับทีละวัน) + active-toggle.tsx
 │   │
 │   ├── components/                 # ของเดิมจากธีมหลังบ้าน — ตอนนี้ไม่มีหน้าไหน import
 │   │   ├── navbar.tsx              # Navbar (async Server Component) — sign in / sign out + theme toggle
@@ -70,7 +71,8 @@ auth-101/
 │   │   ├── auth/register/          # POST /api/auth/register
 │   │   ├── bookings/               # POST /api/bookings — route.ts + validate.ts (คำนวณราคาใหม่ที่ server)
 │   │   ├── bookings/[id]/          # PATCH /api/bookings/[id] — admin เปลี่ยนสถานะ (confirmed / cancelled), ลูกค้ายกเลิกคำขอ pending ของตัวเอง
-│   │   └── boats/                  # POST /api/boats, PATCH /api/boats/[id], PATCH /api/boats/[id]/active (admin เท่านั้น) — validate.ts ใช้ร่วมกัน
+│   │   └── boats/                  # POST /api/boats, PATCH /api/boats/[id], PATCH /api/boats/[id]/active,
+│   │                               #   POST /api/boats/[id]/closures, DELETE /api/boats/[id]/closures/[closureId] (admin เท่านั้น)
 │   │
 │   ├── lib/
 │   │   ├── boats.ts                # ข้อมูลคงที่ (TRIPS, PORTS, AMENITIES, ADDONS, INCLUDED) + quote() คำนวณราคา + helper วันที่เวลาไทย
@@ -82,7 +84,7 @@ auth-101/
 │       ├── index.ts                # Drizzle client (neon-http)
 │       └── schema.ts               # users, boats, bookings
 │
-├── drizzle/                        # SQL migrations 0000–0009
+├── drizzle/                        # SQL migrations 0000–0010
 ├── scripts/
 │   ├── migrate.ts                  # apply migrations ผ่าน Neon HTTP (ใช้ตอน vercel-build)
 │   ├── baseline-migrations.ts      # mark migrations เก่าว่า applied แล้วโดยไม่รัน SQL
@@ -135,6 +137,18 @@ auth-101/
 
 - Unique index `bookings_boat_date_active` บน (`boat_id`, `trip_date`) เฉพาะแถวที่ `status <> 'cancelled'` → เรือหนึ่งลำจองได้วันละหนึ่งรายการ กันจองซ้อนได้แม้ส่งพร้อมกัน (neon-http ไม่มี interactive transaction)
 
+### `boat_closures` — วันปิดรับจอง
+| Column | Type | Note |
+|--------|------|------|
+| id | text (UUID) | Primary Key |
+| boatId | text | FK → `boats.id` (ON DELETE CASCADE) |
+| date | date | วันที่ปิดรับจอง |
+| reason | text | Nullable — เช่น ซ่อมบำรุง / คลื่นลม |
+| createdAt | timestamp | Auto |
+
+- Unique index `boat_closures_boat_date` บน (`boat_id`, `date`) — วันละหนึ่งแถวต่อเรือ
+- วันปิดแสดงเป็น "ปิด" ในปฏิทินหน้า `/boats/[id]` และ `POST /api/bookings` ตอบ 409 — คำขอจองที่มีอยู่แล้ววันนั้นไม่ถูกยกเลิกอัตโนมัติ (หน้าแก้ไขเรือแจ้งเตือนให้)
+
 ### ประวัติ migration
 | ไฟล์ | เปลี่ยนอะไร |
 |------|-------------|
@@ -145,6 +159,7 @@ auth-101/
 | `0007` | เพิ่ม `boats`, `bookings` |
 | `0008` | drop `crops`, `plots` (นำระบบฟาร์มออก) |
 | `0009` | เพิ่ม `boats.active` (เปิด / ปิดรับจอง) |
+| `0010` | เพิ่มตาราง `boat_closures` (วันปิดรับจองรายวันของแต่ละเรือ) |
 
 ---
 

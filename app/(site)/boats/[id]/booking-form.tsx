@@ -13,7 +13,7 @@ type Boat = {
   priceFull: number | null;
   priceNight: number | null;
 };
-type Day = { ymd: string; full: boolean };
+type Day = { ymd: string; full: boolean; closed: boolean }; // full = เลือกไม่ได้, closed = admin ปิดรับจองวันนั้น
 
 const heading = 'font-(family-name:--font-kanit) font-semibold';
 // ไม่ใส่สีพื้นตรงนี้ — ให้แต่ละสถานะ (เลือก / ไม่เลือก / เต็ม) กำหนดเอง ไม่งั้น bg-white ชนกับ bg ของสถานะที่เลือก
@@ -77,11 +77,14 @@ export default function BookingForm({
       router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
     } else if (res?.status === 409) {
       const body = await res.json().catch(() => null);
-      // 409 มีสองกรณี: วันนั้นถูกจองแล้ว หรือเรือเพิ่งถูกปิดรับจอง
+      // 409 มีสามกรณี: เรือเพิ่งถูกปิดรับจอง / วันนั้นเพิ่งถูกปิด / วันนั้นถูกจองแล้ว
+      const msg = String(body?.message ?? '');
       setError(
-        String(body?.message ?? '').includes('not accepting')
+        msg.includes('not accepting')
           ? 'เรือลำนี้ปิดรับจองแล้ว'
-          : 'วันนี้มีคนจองเรือลำนี้ไปแล้ว กรุณาเลือกวันอื่น',
+          : msg.includes('closed on that date')
+            ? 'วันนี้เรือปิดรับจอง กรุณาเลือกวันอื่น'
+            : 'วันนี้มีคนจองเรือลำนี้ไปแล้ว กรุณาเลือกวันอื่น',
       );
       router.refresh();
     } else {
@@ -138,7 +141,7 @@ export default function BookingForm({
                   type="button"
                   disabled={d.full}
                   aria-pressed={active}
-                  aria-label={`${thaiDate(d.ymd, { weekday: 'long', day: 'numeric', month: 'long' })}${d.full ? ' เต็มแล้ว' : ''}`}
+                  aria-label={`${thaiDate(d.ymd, { weekday: 'long', day: 'numeric', month: 'long' })}${d.closed ? ' ปิดรับจอง' : d.full ? ' เต็มแล้ว' : ''}`}
                   onClick={() => edit(setDate)(d.ymd)}
                   className={`${card} flex flex-col items-center gap-0.5 px-1.5 py-3 ${
                     active ? 'border-(--nl-navy) bg-(--nl-navy) text-white' : idle
@@ -146,7 +149,7 @@ export default function BookingForm({
                 >
                   <span className={`text-[13px] ${active || d.full ? '' : 'text-(--nl-muted)'}`}>{dow}</span>
                   <span className={`${heading} text-2xl ${d.full ? 'line-through' : ''}`}>{num}</span>
-                  <span className={`text-xs ${active || d.full ? '' : 'text-(--nl-teal)'}`}>{d.full ? 'เต็ม' : 'ว่าง'}</span>
+                  <span className={`text-xs ${active || d.full ? '' : 'text-(--nl-teal)'}`}>{d.closed ? 'ปิด' : d.full ? 'เต็ม' : 'ว่าง'}</span>
                 </button>
               );
             })}

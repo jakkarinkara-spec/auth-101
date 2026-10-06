@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { and, count, eq, gte, ne } from 'drizzle-orm';
+import { and, asc, eq, gte, ne } from 'drizzle-orm';
 import { db } from '@/app/db/index';
-import { boats, bookings } from '@/app/db/schema';
-import { bangkokToday } from '@/app/lib/boats';
+import { boatClosures, boats, bookings } from '@/app/db/schema';
+import { BOOKING_WINDOW_DAYS, addDays, bangkokToday } from '@/app/lib/boats';
 import ActiveToggle from '../active-toggle';
+import Closures from '../closures';
 import { heading } from '../../../_components/ui';
 import { AdminHeader, NotAdmin, adminSession } from '../../guard';
 import BoatForm from '../boat-form';
@@ -15,14 +16,25 @@ export default async function EditBoatPage({ params }: Ctx) {
   const { id } = await params;
   if (!(await adminSession(`/admin/boats/${id}`))) return <NotAdmin />;
 
-  const [[boat], [load]] = await Promise.all([
+  const today = bangkokToday();
+  const tomorrow = addDays(today, 1);
+  const [[boat], activeBookings, closureRows] = await Promise.all([
     db.select().from(boats).where(eq(boats.id, id)).limit(1),
+    // คำขอที่ยังไม่ยกเลิกและยังไม่ถึงวัน — ใช้นับ + เตือนวันปิดที่มีคนจองอยู่แล้ว
     db
-      .select({ n: count() })
+      .select({ date: bookings.tripDate })
       .from(bookings)
-      .where(and(eq(bookings.boatId, id), ne(bookings.status, 'cancelled'), gte(bookings.tripDate, bangkokToday()))),
+      .where(and(eq(bookings.boatId, id), ne(bookings.status, 'cancelled'), gte(bookings.tripDate, today))),
+    db
+      .select({ id: boatClosures.id, date: boatClosures.date, reason: boatClosures.reason })
+      .from(boatClosures)
+      .where(and(eq(boatClosures.boatId, id), gte(boatClosures.date, tomorrow)))
+      .orderBy(asc(boatClosures.date)),
   ]);
   if (!boat) notFound();
+
+  const bookedDates = new Set(activeBookings.map((b) => b.date));
+  const closures = closureRows.map((c) => ({ ...c, booked: bookedDates.has(c.date) }));
 
   return (
     <>
@@ -51,10 +63,11 @@ export default async function EditBoatPage({ params }: Ctx) {
                 <Link href={`/boats/${boat.id}`} className="py-1.5 font-semibold text-(--nl-teal) hover:text-(--nl-teal-dk)">
                   ดูหน้าเรือ →
                 </Link>
-                <ActiveToggle id={boat.id} active={boat.active} upcoming={load.n} />
+                <ActiveToggle id={boat.id} active={boat.active} upcoming={activeBookings.length} />
               </div>
             </div>
           </div>
+          <Closures boatId={boat.id} closures={closures} minDate={tomorrow} maxDate={addDays(today, BOOKING_WINDOW_DAYS)} />
           <BoatForm
             boat={{
               id: boat.id,

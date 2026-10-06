@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { and, eq, gte, lte, ne } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { db } from '@/app/db/index';
-import { boats, bookings } from '@/app/db/schema';
+import { boatClosures, boats, bookings } from '@/app/db/schema';
 import { CALENDAR_DAYS, TRIPS, addDays, bangkokToday, boatPrice, isTripType, isYmd, portLabel } from '@/app/lib/boats';
 import { firstParam, type SearchParams } from '@/app/lib/search';
 import { PortBadge, Placeholder, SiteHeader, SiteNav, heading } from '../../_components/ui';
@@ -17,20 +17,27 @@ export default async function BoatDetailPage({ params, searchParams }: Ctx) {
   const first = addDays(bangkokToday(), 1);
   const last = addDays(first, CALENDAR_DAYS - 1);
 
-  const [[boat], booked, session] = await Promise.all([
+  const [[boat], booked, closures, session] = await Promise.all([
     db.select().from(boats).where(eq(boats.id, id)).limit(1),
     db
       .select({ date: bookings.tripDate })
       .from(bookings)
       .where(and(eq(bookings.boatId, id), ne(bookings.status, 'cancelled'), gte(bookings.tripDate, first), lte(bookings.tripDate, last))),
+    db
+      .select({ date: boatClosures.date })
+      .from(boatClosures)
+      .where(and(eq(boatClosures.boatId, id), gte(boatClosures.date, first), lte(boatClosures.date, last))),
     auth(),
   ]);
   if (!boat) notFound();
 
+  // full = เลือกไม่ได้ (มีคนจองแล้ว หรือ admin ปิดรับจองวันนั้น), closed = ใช้แยกป้าย "ปิด" กับ "เต็ม"
   const bookedSet = new Set(booked.map((b) => b.date));
+  const closedSet = new Set(closures.map((c) => c.date));
   const days = Array.from({ length: CALENDAR_DAYS }, (_, i) => {
     const ymd = addDays(first, i);
-    return { ymd, full: bookedSet.has(ymd) };
+    const closed = closedSet.has(ymd);
+    return { ymd, closed, full: closed || bookedSet.has(ymd) };
   });
 
   // ค่าเริ่มต้นจาก query (มาจากหน้า /boats หรือฟอร์มค้นหาหน้าแรก) — ใช้ได้เฉพาะค่าที่เรือลำนี้รับจริง
