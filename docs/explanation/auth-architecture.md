@@ -36,7 +36,7 @@ NextAuth รองรับสองกลยุทธ์สำหรับ sess
 
 **ชั้นที่ 2 — Server Component (auth())**
 
-`dashboard/page.tsx` เรียก `auth()` ซึ่ง verify ลายเซ็น JWT จริงๆ ถ้า cookie ถูกแก้ไข หมดอายุ หรือ `AUTH_SECRET` ถูก rotate แล้ว `auth()` จะคืนค่า `null` และ redirect ไปที่ `/login`
+หน้า / route handler ที่ต้องรู้ว่าใครล็อกอิน (ตอนนี้คือ `POST /api/bookings` และ `SiteNav`) เรียก `auth()` ซึ่ง verify ลายเซ็น JWT จริงๆ ถ้า cookie ถูกแก้ไข หมดอายุ หรือ `AUTH_SECRET` ถูก rotate แล้ว `auth()` จะคืนค่า `null` และถือว่ายังไม่ได้ล็อกอิน (API ตอบ 401)
 
 **ทำไมต้องสองชั้น**
 
@@ -52,10 +52,10 @@ NextAuth รองรับสองกลยุทธ์สำหรับ sess
 4. ถ้าพบผู้ใช้ bcrypt เปรียบเทียบรหัสผ่านที่ส่งมากับ hash ที่เก็บไว้
 5. ถ้าตรงกัน `authorize` คืนค่า user object NextAuth sign JWT ที่มี id, email และ name ของผู้ใช้
 6. JWT ถูกตั้งเป็น cookie ใน response
-7. เบราว์เซอร์ redirect ไปที่ `/dashboard`
+7. เบราว์เซอร์ redirect ไปที่ `callbackUrl` (ค่าเริ่มต้น `/` หรือหน้าเรือที่กดจองไว้)
 
 สำหรับ request ถัดไปที่เข้าหน้า protected `auth()` อ่านและตรวจสอบลายเซ็นของ cookie ถ้าถูกต้องจะคืนค่า session ถ้า cookie หายหรือลายเซ็นไม่ถูกต้อง `auth()` คืนค่า `null` และหน้านั้น redirect ไปที่ `/login`
 
 ## ทำไมถึงมีตาราง crops
 
-ตาราง `crops` ใน schema ไม่เกี่ยวข้องกับ authentication ดูเหมือนจะเป็นการทดลองในช่วงต้นหรือ placeholder สำหรับ feature ในอนาคต — อาจเป็น domain model ของแอปจัดการพืชผลที่ระบบ auth นี้ถูกสร้างมาเพื่อป้องกัน ปัจจุบันใช้งานที่หน้า `/dashboard/crops` (สร้าง + แสดงรายการ) ผ่าน `POST /api/crops` — ตารางยังไม่มีคอลัมน์ owner จึงทุก user เห็น crops ร่วมกัน
+ตาราง `crops` ใน schema ไม่เกี่ยวข้องกับ authentication ดูเหมือนจะเป็นการทดลองในช่วงต้นหรือ placeholder สำหรับ feature ในอนาคต — อาจเป็น domain model ของแอปจัดการพืชผลที่ระบบ auth นี้ถูกสร้างมาเพื่อป้องกัน เคยใช้กับหน้าจัดการฟาร์ม (`/dashboard/crops`, `/dashboard/plots`) ซึ่งถูกนำออกแล้ว — ตอนนี้นำออกจาก `schema.ts` และ drop ตารางใน DB แล้ว (migration `0008`)

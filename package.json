@@ -11,7 +11,8 @@
     "vercel-build": "tsx scripts/migrate.ts && next build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
-    "db:baseline": "tsx scripts/baseline-migrations.ts"
+    "db:baseline": "tsx scripts/baseline-migrations.ts",
+    "seed:boats": "tsx scripts/seed-boats.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

@@ -53,7 +53,7 @@ Content-Type: application/json
 | `password` | string | ใช่ |
 | `callbackUrl` | string | ไม่ |
 
-เมื่อสำเร็จ จะตั้งค่า JWT session cookie และ redirect ไปที่ `callbackUrl` (ค่าเริ่มต้น: `/dashboard`)
+เมื่อสำเร็จ จะตั้งค่า JWT session cookie และ redirect ไปที่ `callbackUrl` (หน้า `/login` ส่งค่าจาก `?callbackUrl=` ถ้าเป็น path ในเว็บ ไม่งั้นใช้ `/`)
 เมื่อล้มเหลว จะ redirect ไปที่ `/login?error=CredentialsSignin`
 
 ---
@@ -90,62 +90,121 @@ null
 
 ---
 
-## Endpoints สำหรับ Crops
+## Endpoints สำหรับจองเรือ (Bookings)
 
 ---
 
-### `POST /api/crops`
+### `POST /api/bookings`
 
-สร้าง crop ใหม่ ต้องล็อกอินก่อน (ตรวจ session ด้วย `auth()` ใน route handler)
+ส่งคำขอจองเรือ ต้องล็อกอินก่อน (ตรวจ session ด้วย `auth()` ใน route handler) — `userId` ตั้งเป็น user ที่ล็อกอิน ราคา (`total`, `deposit`) **คำนวณใหม่ที่ server** จากราคาเรือในตาราง `boats` และ `ADDONS` ใน `app/lib/boats.ts` ไม่รับจาก client สถานะเริ่มต้นเป็น `pending` (ยังไม่มีระบบชำระเงินจริง)
 
 **Request body**
 
 | Field | Type | จำเป็น | คำอธิบาย |
 |-------|------|--------|----------|
-| `name` | string | ไม่ | ชื่อพืช — ค่าว่างจะเก็บเป็น `null` |
-| `dayGrow` | integer | ใช่ | จำนวนวันที่ใช้ปลูก ต้องเป็นจำนวนเต็ม 1–2147483647 |
-
-**Responses**
-
-| Status | เงื่อนไข |
-|--------|----------|
-| `201 Created` | สร้างสำเร็จ — คืน row ที่สร้าง (`id`, `name`, `dayGrow`, `createdAt`) |
-| `400 Bad Request` | `dayGrow` ไม่ใช่จำนวนเต็มบวก |
-| `401 Unauthorized` | ยังไม่ได้ล็อกอิน |
-
-UI สำหรับสร้างและดูรายการอยู่ที่ `/dashboard/crops`
-
----
-
-## Endpoints สำหรับแปลงปลูก (Plots)
-
----
-
-### `POST /api/plots`
-
-สร้างแปลงปลูกใหม่ ต้องล็อกอินก่อน (ตรวจ session ด้วย `auth()` ใน route handler)
-
-**Request body**
-
-| Field | Type | จำเป็น | คำอธิบาย |
-|-------|------|--------|----------|
-| `name` | string | ใช่ | ชื่อแปลง |
-| `areaRai` | string/number | ไม่ | ขนาดแปลง (ไร่) มากกว่า 0 ปัดเป็นทศนิยม 2 ตำแหน่ง |
-| `location` | string | ไม่ | ที่ตั้งแปลง |
-| `cropId` | string | ไม่ | `id` ของ crop ที่มีอยู่จริง |
-| `plantedAt` | string | ไม่ | วันที่ปลูก รูปแบบ `YYYY-MM-DD` |
-
-ค่าว่างของ field ที่ไม่บังคับจะเก็บเป็น `null`
+| `boatId` | string | ใช่ | `id` ของเรือ |
+| `tripType` | string | ใช่ | `half` / `full` / `night` — เรือต้องมีราคาของทริปนั้น (ไม่เป็น null) |
+| `tripDate` | string | ใช่ | `YYYY-MM-DD` ตั้งแต่พรุ่งนี้ (เวลาไทย) ถึง 60 วันข้างหน้า — จองได้ครั้งละหนึ่งวัน |
+| `guests` | integer | ใช่ | 1 ถึง `boats.seats` |
+| `addons` | string[] | ไม่ | id ของบริการเสริม: `gear` (฿500/คน), `lunch` (฿250/คน), `photo` (฿1,500/ทริป) |
 
 **Responses**
 
 | Status | เงื่อนไข |
 |--------|----------|
 | `201 Created` | สร้างสำเร็จ — คืน row ที่สร้าง |
-| `400 Bad Request` | ไม่มี `name`, `areaRai` ไม่ถูกต้อง, `plantedAt` ไม่ใช่วันที่ หรือ `cropId` ไม่มีอยู่จริง |
+| `400 Bad Request` | field ไม่ถูกต้อง, วันที่อยู่นอกช่วง, จำนวนคนเกิน, add-on ไม่รู้จัก หรือเรือไม่รับทริปประเภทนั้น |
 | `401 Unauthorized` | ยังไม่ได้ล็อกอิน |
+| `404 Not Found` | ไม่มีเรือที่ `boatId` นี้ |
+| `409 Conflict` | เรือลำนี้มีคนจองวันนั้นแล้ว (unique index `bookings_boat_date_active`) หรือเรือปิดรับจอง (`boats.active = false`) |
 
-UI สำหรับสร้างและดูรายการอยู่ที่ `/dashboard/plots` (แสดงวันเก็บเกี่ยวโดยประมาณ = `plantedAt` + `crops.dayGrow`)
+UI อยู่ที่ `/boats/[id]` — ถ้ายังไม่ล็อกอิน ปุ่มจองจะพาไป `/login?callbackUrl=/boats/[id]`
+
+### `PATCH /api/bookings/[id]`
+
+เปลี่ยนสถานะคำขอจอง — ต้องล็อกอิน (ตรวจ `auth()` แล้ว `isAdmin()` อ่าน `users.role` จาก DB)
+
+**Request body**: `{ "status": "confirmed" | "cancelled" }`
+
+การเปลี่ยนที่อนุญาต (เช็คเจ้าของ + สถานะเดิมใน `WHERE` ของ UPDATE เดียว):
+
+| ผู้เรียก | เป้าหมาย | เงื่อนไข |
+|----------|----------|----------|
+| admin | `confirmed` | รายการใดก็ได้ที่เป็น `pending` |
+| admin | `cancelled` | รายการใดก็ได้ที่เป็น `pending` หรือ `confirmed` |
+| ลูกค้า | `cancelled` | เฉพาะรายการของตัวเอง (`userId` = session) ที่ยังเป็น `pending` |
+
+รายการที่ `cancelled` แล้วเปลี่ยนกลับไม่ได้ — วันนั้นถูกปล่อยว่างแล้ว (unique index ไม่นับรายการที่ยกเลิก) อาจมีคนอื่นจองไปแล้ว
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `200 OK` | สำเร็จ — คืน row ที่แก้แล้ว |
+| `400 Bad Request` | `status` ไม่ใช่ `confirmed` / `cancelled` |
+| `401 Unauthorized` | ยังไม่ได้ล็อกอิน |
+| `403 Forbidden` | ไม่ใช่ admin แต่ส่ง `status: "confirmed"` |
+| `404 Not Found` | ไม่มีคำขอจองที่ `id` นี้ หรือ (ลูกค้า) เป็นรายการของคนอื่น — ตอบเหมือนกันเพื่อไม่บอกว่ามีอยู่ |
+| `409 Conflict` | สถานะปัจจุบันเปลี่ยนแบบนั้นไม่ได้ (เช่น ยืนยันรายการที่ยกเลิกแล้ว หรือลูกค้ายกเลิกรายการที่ยืนยันแล้ว) |
+
+UI อยู่ที่ `/admin`
+
+---
+
+## Endpoints สำหรับเรือ (Boats) — admin เท่านั้น
+
+### `POST /api/boats`
+
+เพิ่มเรือ — ตรวจ `auth()` แล้ว `isAdmin()` (อ่าน `users.role` จาก DB)
+
+**Request body**
+
+| Field | Type | จำเป็น | คำอธิบาย |
+|-------|------|--------|----------|
+| `name`, `kind`, `captain` | string | ใช่ | ชื่อเรือ, ประเภทเรือ, ชื่อกัปตัน (ตัดช่องว่างหัวท้าย) |
+| `port` | string | ใช่ | ต้องเป็น id ใน `PORTS` (`สัตหีบ`, `หัวหิน`, `ภูเก็ต`, `เกาะช้าง`) |
+| `lengthM` | integer | ใช่ | 1–200 (เมตร) |
+| `seats` | integer | ใช่ | 1–100 |
+| `description`, `engine`, `equipment` | string | ไม่ | ค่าว่างเก็บเป็น `null` |
+| `tags` | string[] | ไม่ | ต้องอยู่ใน `BOAT_TAGS` (`หลังคากันแดด`, `ห้องน้ำ`, `โซนาร์`, `ที่นอน`, `ไฟล่อหมึก`) |
+| `priceHalf`, `priceFull`, `priceNight` | integer \| "" \| null | อย่างน้อย 1 | ราคาเหมาลำ (บาท) จำนวนเต็ม > 0 — ว่าง / null = ไม่รับทริปแบบนั้น |
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `201 Created` | สร้างสำเร็จ — คืน row ที่สร้าง |
+| `400 Bad Request` | field ไม่ถูกต้อง หรือไม่มีราคาเลยสักแบบ |
+| `401 Unauthorized` | ยังไม่ได้ล็อกอิน |
+| `403 Forbidden` | ไม่ใช่ admin |
+
+### `PATCH /api/boats/[id]`
+
+แก้ไขเรือ — body และการตรวจสอบเหมือน `POST /api/boats` (ส่งทุก field มาแทนค่าเดิม) ราคาที่บันทึกไว้ในคำขอจองเดิมไม่เปลี่ยนตาม
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `200 OK` | แก้ไขสำเร็จ — คืน row ที่แก้แล้ว |
+| `400 Bad Request` | เงื่อนไขเดียวกับ `POST` |
+| `401 Unauthorized` | ยังไม่ได้ล็อกอิน |
+| `403 Forbidden` | ไม่ใช่ admin |
+| `404 Not Found` | ไม่มีเรือที่ `id` นี้ |
+
+UI อยู่ที่ `/admin/boats/new` และ `/admin/boats/[id]` (ลิงก์จากตารางเรือในหน้า `/admin`)
+
+> body ของ `POST` / `PATCH /api/boats` ไม่มี `active` — เรือใหม่เปิดรับจองเสมอ และการแก้ไขไม่เปลี่ยนสถานะ ใช้ endpoint ด้านล่างแทน
+
+### `PATCH /api/boats/[id]/active`
+
+เปิด / ปิดรับจอง (admin เท่านั้น) — ใช้แทนการลบเรือ คำขอจองเดิมไม่ถูกแก้หรือยกเลิก
+
+**Request body**: `{ "active": true | false }`
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `200 OK` | สำเร็จ — คืน `{ id, active }` |
+| `400 Bad Request` | `active` ไม่ใช่ boolean |
+| `401 Unauthorized` | ยังไม่ได้ล็อกอิน |
+| `403 Forbidden` | ไม่ใช่ admin |
+| `404 Not Found` | ไม่มีเรือที่ `id` นี้ |
+
+UI: ปุ่ม "ปิดรับจอง" (กดยืนยันอีกครั้ง) / "เปิดรับจอง" ในตารางเรือหน้า `/admin` และหน้าแก้ไขเรือ
 
 ---
 
@@ -227,26 +286,41 @@ endpoint นี้เปิดให้ระบบภายนอกดึง�
 | `password` | text | NOT NULL | — |
 | `createdAt` | timestamp | NOT NULL | `now()` |
 
-### `crops`
+> ตาราง `crops` และ `plots` (ระบบฟาร์มเดิม) ถูก drop แล้วใน migration `0008`
 
-| Column | Type | Constraints | Default |
-|--------|------|-------------|---------|
-| `id` | text | PRIMARY KEY | `gen_random_uuid()` |
-| `name` | text | nullable | — |
-| `dayGrow` | integer | NOT NULL | — |
-| `createdAt` | timestamp | NOT NULL | `now()` |
-
-### `plots`
+### `boats`
 
 | Column | Type | Constraints | Default |
 |--------|------|-------------|---------|
 | `id` | text | PRIMARY KEY | `crypto.randomUUID()` |
 | `name` | text | NOT NULL | — |
-| `areaRai` | numeric(10,2) | nullable | — |
-| `location` | text | nullable | — |
-| `cropId` | text | nullable, FK → `crops.id` (ON DELETE SET NULL) | — |
-| `plantedAt` | date | nullable | — |
+| `port` | text | NOT NULL | — |
+| `lengthM` | integer | NOT NULL | — |
+| `seats` | integer | NOT NULL | — |
+| `kind` | text | NOT NULL | — |
+| `captain` | text | NOT NULL | — |
+| `description` / `engine` / `equipment` | text | nullable | — |
+| `tags` | text[] | NOT NULL | `'{}'` |
+| `priceHalf` / `priceFull` / `priceNight` | integer | nullable (null = ไม่รับทริปแบบนั้น) | — |
+| `active` | boolean | NOT NULL (false = ปิดรับจอง) | `true` |
 | `createdAt` | timestamp | NOT NULL | `now()` |
+
+### `bookings`
+
+| Column | Type | Constraints | Default |
+|--------|------|-------------|---------|
+| `id` | text | PRIMARY KEY | `crypto.randomUUID()` |
+| `userId` | text | NOT NULL, FK → `users.id` (ON DELETE CASCADE) | — |
+| `boatId` | text | NOT NULL, FK → `boats.id` (ON DELETE CASCADE) | — |
+| `tripType` | enum `trip_type` (`half`, `full`, `night`) | NOT NULL | — |
+| `tripDate` | date | NOT NULL | — |
+| `guests` | integer | NOT NULL | — |
+| `addons` | text[] | NOT NULL | `'{}'` |
+| `total` / `deposit` | integer | NOT NULL | — |
+| `status` | enum `booking_status` (`pending`, `confirmed`, `cancelled`) | NOT NULL | `'pending'` |
+| `createdAt` | timestamp | NOT NULL | `now()` |
+
+Unique index `bookings_boat_date_active` บน (`boatId`, `tripDate`) WHERE `status <> 'cancelled'`
 
 ### `item_maintenance_requests`
 
@@ -295,10 +369,9 @@ endpoint นี้เปิดให้ระบบภายนอกดึง�
 
 | เงื่อนไข | ผลลัพธ์ |
 |----------|---------|
-| มี session cookie + เข้า `/login` หรือ `/register` | redirect → `/dashboard` |
-| ไม่มี session cookie + เข้า `/dashboard/*` | redirect → `/login` |
+| มี session cookie + เข้า `/login` หรือ `/register` | redirect → `/` |
 | กรณีอื่นๆ | `NextResponse.next()` |
 
-**matcher ที่ครอบคลุม**: `/dashboard/:path*`, `/login`, `/register`
+**matcher ที่ครอบคลุม**: `/login`, `/register` (หน้า `/dashboard` ถูกนำออกแล้ว ตอนนี้ไม่มีหน้าที่ต้องล็อกอินถึงเข้าได้)
 
 > proxy ตรวจแค่ว่า cookie มีอยู่หรือไม่ (fast check) การ validate JWT จริงทำใน Server Component ด้วย `auth()` อีกชั้นหนึ่ง

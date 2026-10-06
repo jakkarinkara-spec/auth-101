@@ -8,23 +8,18 @@ function hasSession(request: NextRequest): boolean {
   return SESSION_COOKIES.some((name) => request.cookies.has(name));
 }
 
+// ล็อกอินอยู่แล้วไม่ต้องเห็นหน้า login / register — ส่งกลับหน้าแรก
+// (ยังไม่มีหน้าที่ต้องล็อกอินถึงเข้าได้ — การจองเช็ค session ใน /api/bookings เอง)
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isAuthenticated = hasSession(request);
 
-  // Redirect logged-in users away from auth pages
-  if (isAuthenticated && (pathname === '/login' || pathname === '/register')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  // Protect dashboard routes — full session validation still happens in the Server Component
-  if (!isAuthenticated && pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  if (hasSession(request) && (pathname === '/login' || pathname === '/register')) {
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/register'],
+  matcher: ['/login', '/register'],
 };

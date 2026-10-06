@@ -43,6 +43,34 @@
       "when": 1791186900612,
       "tag": "0005_nostalgic_absorbing_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791266934443,
+      "tag": "0006_plots_owner",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791271361766,
+      "tag": "0007_boat_rental",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791272595599,
+      "tag": "0008_drop_farm",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791275288225,
+      "tag": "0009_boat_active",
+      "breakpoints": true
     }
   ]
 }
