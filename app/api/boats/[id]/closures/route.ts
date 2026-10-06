@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/app/db/index";
 import { boatClosures, boats } from "@/app/db/schema";
-import { isAdmin } from "@/app/lib/admin";
+import { canManageBoat } from "@/app/lib/admin";
 import { BOOKING_WINDOW_DAYS, addDays, bangkokToday, isYmd } from "@/app/lib/boats";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -11,18 +11,19 @@ type Ctx = { params: Promise<{ id: string }> };
 // ปิดได้ครั้งละไม่เกินกี่วัน (from–to รวมหัวท้าย)
 const MAX_RANGE_DAYS = 31;
 
-// ปิดรับจองช่วงวันที่ (admin เท่านั้น) — หนึ่งแถวต่อวัน วันที่ปิดอยู่แล้วข้ามไป (ไม่ error)
+// ปิดรับจองช่วงวันที่ (admin หรือเจ้าของเรือ) — หนึ่งแถวต่อวัน วันที่ปิดอยู่แล้วข้ามไป (ไม่ error)
 // คำขอจองที่มีอยู่แล้วในวันนั้นไม่ถูกยกเลิก — admin จัดการเองในหน้า /admin
 export async function POST(req: Request, { params }: Ctx) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
-  if (!(await isAdmin(session.user.id))) {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  }
 
   const { id } = await params;
+  // admin หรือเจ้าของเรือลำนี้ (เช็คจาก boats.owner_id)
+  if (!(await canManageBoat(session.user.id, id))) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
   const b = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const from = b?.from;
   const to = b?.to ?? from; // ไม่ส่ง to = ปิดวันเดียว

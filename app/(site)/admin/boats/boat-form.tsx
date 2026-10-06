@@ -27,8 +27,27 @@ const PRICE_KEY = { half: 'priceHalf', full: 'priceFull', night: 'priceNight' } 
 const section = 'flex flex-col gap-5 rounded-[20px] border border-(--nl-line) bg-white p-6 sm:p-8';
 const num = (v: number | null) => (v === null ? '' : String(v));
 
-// ฟอร์มเรือ — ไม่มี id = เพิ่มใหม่ (POST), มี id = แก้ไข (PATCH) ส่งทุก field
-export default function BoatForm({ boat }: { boat: BoatFormValues }) {
+const EMPTY: BoatFormValues = {
+  name: '',
+  port: '',
+  lengthM: null,
+  seats: null,
+  kind: '',
+  captain: '',
+  description: null,
+  engine: null,
+  equipment: null,
+  tags: [],
+  priceHalf: null,
+  priceFull: null,
+  priceNight: null,
+};
+
+// ฟอร์มเรือ
+//   mode="admin" (ค่าเริ่มต้น): ไม่มี id = เพิ่มใหม่ (POST /api/boats), มี id = แก้ไข (PATCH) ส่งทุก field
+//   mode="apply": ผู้ใช้สมัครเป็นเจ้าของเรือ — ส่งข้อมูลเรือ + เบอร์โทร + หมายเหตุ ไป POST /api/owner-applications
+export default function BoatForm({ boat = EMPTY, mode = 'admin' }: { boat?: BoatFormValues; mode?: 'admin' | 'apply' }) {
+  const apply = mode === 'apply';
   const router = useRouter();
   const [v, setV] = useState({
     name: boat.name,
@@ -45,7 +64,9 @@ export default function BoatForm({ boat }: { boat: BoatFormValues }) {
     priceNight: num(boat.priceNight),
   });
   const [tags, setTags] = useState<string[]>(boat.tags);
+  const [note, setNote] = useState('');
   const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -59,19 +80,43 @@ export default function BoatForm({ boat }: { boat: BoatFormValues }) {
       return;
     }
     setSaving(true);
-    const res = await fetch(boat.id ? `/api/boats/${boat.id}` : '/api/boats', {
-      method: boat.id ? 'PATCH' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...v, tags }),
-    }).catch(() => null);
+    setDone(false);
+    const res = apply
+      ? await fetch('/api/owner-applications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ boat: { ...v, tags }, note }),
+        }).catch(() => null)
+      : await fetch(boat.id ? `/api/boats/${boat.id}` : '/api/boats', {
+          method: boat.id ? 'PATCH' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...v, tags }),
+        }).catch(() => null);
     setSaving(false);
 
+    if (res?.ok && apply) {
+      // ส่งคำขอแล้ว — ล้างฟอร์ม อยู่หน้าเดิมให้เห็นคำขอในรายการ "คำขอของฉัน"
+      setV({ ...v, name: '', kind: '', captain: '', lengthM: '', seats: '', description: '', engine: '', equipment: '', priceHalf: '', priceFull: '', priceNight: '' });
+      setTags([]);
+      setNote('');
+      setDone(true);
+      router.refresh();
+      return;
+    }
     if (res?.ok) {
-      router.push('/admin#boats');
+      router.push('/admin/boats');
       router.refresh();
       return;
     }
     const body = await res?.json().catch(() => null);
+    if (apply && res?.status === 409) {
+      setError(
+        String(body?.message ?? '').includes('profile') || String(body?.message ?? '').includes('not approved')
+          ? 'ต้องให้ผู้ดูแลระบบอนุมัติตัวบุคคลก่อน จึงขอเพิ่มเรือได้'
+          : 'มีคำขอที่รออนุมัติครบ 3 รายการแล้ว รอผู้ดูแลระบบตรวจก่อน',
+      );
+      return;
+    }
     setError(
       res?.status === 403
         ? 'บัญชีนี้ไม่มีสิทธิ์แก้ไขเรือ'
@@ -164,7 +209,10 @@ export default function BoatForm({ boat }: { boat: BoatFormValues }) {
       <section className={section}>
         <div className="flex flex-col gap-1">
           <h2 className={`${heading} text-[22px]`}>ราคาเหมาลำ (บาท)</h2>
-          <p className="text-sm text-(--nl-muted)">เว้นว่าง = เรือลำนี้ไม่รับทริปแบบนั้น — ต้องมีอย่างน้อยหนึ่งแบบ ราคาใหม่ไม่กระทบคำขอจองที่มีอยู่แล้ว</p>
+          <p className="text-sm text-(--nl-muted)">
+            เว้นว่าง = เรือลำนี้ไม่รับทริปแบบนั้น — ต้องมีอย่างน้อยหนึ่งแบบ
+            {apply ? ' ผู้ดูแลระบบอาจปรับราคาก่อนเปิดรับจอง' : ' ราคาใหม่ไม่กระทบคำขอจองที่มีอยู่แล้ว'}
+          </p>
         </div>
         <div className="grid gap-5 sm:grid-cols-3">
           {TRIPS.map((t) => (
@@ -185,6 +233,25 @@ export default function BoatForm({ boat }: { boat: BoatFormValues }) {
         </div>
       </section>
 
+      {apply && (
+        <section className={section}>
+          <div className="flex flex-col gap-1">
+            <h2 className={`${heading} text-[22px]`}>หมายเหตุถึงผู้ดูแลระบบ</h2>
+            <p className="text-sm text-(--nl-muted)">ผู้ดูแลระบบจะติดต่อตามข้อมูลส่วนตัวเพื่อยืนยันตัวตนและความเป็นเจ้าของเรือก่อนอนุมัติ</p>
+          </div>
+          <label className={fieldLabel}>
+            หมายเหตุ <span className="font-normal text-(--nl-muted)">(ไม่ใส่ก็ได้ — เช่น ทะเบียนเรือ)</span>
+            <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} className={field} />
+          </label>
+        </section>
+      )}
+
+      {done && (
+        <p role="status" className="rounded-xl bg-(--nl-tint) px-4 py-3 text-[15px] text-(--nl-teal-dk)">
+          ส่งคำขอแล้ว — ผู้ดูแลระบบอนุมัติแล้วเรือจะขึ้นในแดชบอร์ดเจ้าของเรือ
+        </p>
+      )}
+
       {error && (
         <p role="alert" className="rounded-xl bg-[#FDECEC] px-4 py-3 text-[15px] text-[#B42318]">
           {error}
@@ -192,14 +259,16 @@ export default function BoatForm({ boat }: { boat: BoatFormValues }) {
       )}
 
       <div className="flex flex-wrap justify-end gap-3">
-        <Link
-          href="/admin#boats"
-          className="flex h-[50px] items-center rounded-xl border border-(--nl-field) bg-white px-6 font-semibold hover:border-(--nl-navy)"
-        >
-          ยกเลิก
-        </Link>
+        {!apply && (
+          <Link
+            href="/admin/boats"
+            className="flex h-[50px] items-center rounded-xl border border-(--nl-field) bg-white px-6 font-semibold hover:border-(--nl-navy)"
+          >
+            ยกเลิก
+          </Link>
+        )}
         <button type="submit" disabled={saving} className={`${primaryButton} px-8`}>
-          {saving ? 'กำลังบันทึก…' : boat.id ? 'บันทึกการแก้ไข' : 'เพิ่มเรือ'}
+          {saving ? 'กำลังบันทึก…' : apply ? 'ส่งคำขอ' : boat.id ? 'บันทึกการแก้ไข' : 'เพิ่มเรือ'}
         </button>
       </div>
     </form>

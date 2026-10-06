@@ -4,23 +4,28 @@ import { and, asc, eq, gte, ne } from 'drizzle-orm';
 import { db } from '@/app/db/index';
 import { boatClosures, boats, bookings } from '@/app/db/schema';
 import { BOOKING_WINDOW_DAYS, addDays, bangkokToday } from '@/app/lib/boats';
-import ActiveToggle from '../active-toggle';
-import Closures from '../closures';
 import { heading } from '../../../_components/ui';
-import { adminSession } from '../../guard';
-import BoatForm from '../boat-form';
+import { approvedOwnerContext } from '../../guard';
+import ActiveToggle from '../../../admin/boats/active-toggle';
+import Closures from '../../../admin/boats/closures';
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export default async function EditBoatPage({ params }: Ctx) {
+// เจ้าของเรือจัดการวันปิดรับจอง + เปิด/ปิดเรือ — เช็คความเป็นเจ้าของที่ server (ไม่ใช่เจ้าของ = 404)
+export default async function OwnerBoatPage({ params }: Ctx) {
   const { id } = await params;
-  if (!(await adminSession(`/admin/boats/${id}`))) return null; // layout แสดงข้อความแจ้งแล้ว
+  const { user } = await approvedOwnerContext(`/owner/boats/${id}`);
+
+  const [boat] = await db
+    .select()
+    .from(boats)
+    .where(and(eq(boats.id, id), eq(boats.ownerId, user.id)))
+    .limit(1);
+  if (!boat) notFound();
 
   const today = bangkokToday();
   const tomorrow = addDays(today, 1);
-  const [[boat], activeBookings, closureRows] = await Promise.all([
-    db.select().from(boats).where(eq(boats.id, id)).limit(1),
-    // คำขอที่ยังไม่ยกเลิกและยังไม่ถึงวัน — ใช้นับ + เตือนวันปิดที่มีคนจองอยู่แล้ว
+  const [activeBookings, closureRows] = await Promise.all([
     db
       .select({ date: bookings.tripDate })
       .from(bookings)
@@ -31,8 +36,6 @@ export default async function EditBoatPage({ params }: Ctx) {
       .where(and(eq(boatClosures.boatId, id), gte(boatClosures.date, tomorrow)))
       .orderBy(asc(boatClosures.date)),
   ]);
-  if (!boat) notFound();
-
   const bookedDates = new Set(activeBookings.map((b) => b.date));
   const closures = closureRows.map((c) => ({ ...c, booked: bookedDates.has(c.date) }));
 
@@ -40,10 +43,10 @@ export default async function EditBoatPage({ params }: Ctx) {
     <div className="flex max-w-[880px] flex-col gap-8">
           <div className="flex flex-col gap-2">
             <p className="text-[15px] text-(--nl-muted)">
-              <Link href="/admin/boats" className="text-(--nl-teal) hover:text-(--nl-teal-dk)">
-                เรือ
+              <Link href="/owner/boats" className="text-(--nl-teal) hover:text-(--nl-teal-dk)">
+                เรือของฉัน
               </Link>{' '}
-              / แก้ไขเรือ
+              / {boat.name}
             </p>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3">
@@ -65,24 +68,6 @@ export default async function EditBoatPage({ params }: Ctx) {
             </div>
           </div>
           <Closures boatId={boat.id} closures={closures} minDate={tomorrow} maxDate={addDays(today, BOOKING_WINDOW_DAYS)} />
-          <BoatForm
-            boat={{
-              id: boat.id,
-              name: boat.name,
-              port: boat.port,
-              lengthM: boat.lengthM,
-              seats: boat.seats,
-              kind: boat.kind,
-              captain: boat.captain,
-              description: boat.description,
-              engine: boat.engine,
-              equipment: boat.equipment,
-              tags: boat.tags,
-              priceHalf: boat.priceHalf,
-              priceFull: boat.priceFull,
-              priceNight: boat.priceNight,
-            }}
-          />
     </div>
   );
 }

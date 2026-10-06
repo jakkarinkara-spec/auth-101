@@ -1,24 +1,25 @@
 import { auth } from "@/auth";
 import { db } from "@/app/db/index";
 import { boats } from "@/app/db/schema";
-import { isAdmin } from "@/app/lib/admin";
+import { canManageBoat } from "@/app/lib/admin";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// เปิด / ปิดรับจอง (admin เท่านั้น) — ใช้แทนการลบเรือ: คำขอจองเดิมไม่ถูกแตะ
+// เปิด / ปิดรับจอง (admin หรือเจ้าของเรือ) — ใช้แทนการลบเรือ: คำขอจองเดิมไม่ถูกแตะ
 // ปิดแล้ว: ไม่แสดงในหน้าเว็บ, POST /api/bookings ตอบ 409
 export async function PATCH(req: Request, { params }: Ctx) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
-  if (!(await isAdmin(session.user.id))) {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  }
 
   const { id } = await params;
+  // admin หรือเจ้าของเรือลำนี้ (เช็คจาก boats.owner_id)
+  if (!(await canManageBoat(session.user.id, id))) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
   const body = (await req.json().catch(() => null)) as { active?: unknown } | null;
   if (typeof body?.active !== "boolean") {
     return NextResponse.json({ message: "active must be true or false" }, { status: 400 });

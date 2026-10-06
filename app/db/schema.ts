@@ -1,7 +1,9 @@
-import { pgTable, text, timestamp, integer, pgEnum, date, uniqueIndex, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, pgEnum, date, uniqueIndex, boolean, jsonb } from "drizzle-orm/pg-core";
+import type { BoatData } from "@/app/api/boats/validate";
 import { sql } from "drizzle-orm";
 
-export const roleEnum = pgEnum("user_role", ["user", "admin"]);
+// owner = เจ้าของเรือ (ได้จากการอนุมัติคำขอ) — ใช้แค่แสดงเมนู สิทธิ์จริงเช็คจาก boats.owner_id
+export const roleEnum = pgEnum("user_role", ["user", "admin", "owner"]);
 
 export const usersTable = pgTable("users", {
   id: text("id")
@@ -39,6 +41,8 @@ export const boats = pgTable("boats", {
   priceNight: integer("price_night"),
   // false = ปิดรับจอง (แทนการลบ — คำขอจองเดิมยังอยู่) ไม่แสดงในหน้าเว็บ และ API ไม่รับจองเพิ่ม
   active: boolean("active").default(true).notNull(),
+  // เจ้าของเรือ — จัดการคำขอจอง / วันปิด / เปิด-ปิดเรือลำนี้ได้ (ลบ user แล้วเรือกลับเป็นไม่มีเจ้าของ)
+  ownerId: text("owner_id").references(() => usersTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -85,3 +89,51 @@ export const boatClosures = pgTable(
   },
   (t) => [uniqueIndex("boat_closures_boat_date").on(t.boatId, t.date)],
 );
+
+export const ownerApplicationStatusEnum = pgEnum("owner_application_status", ["pending", "approved", "rejected"]);
+
+// คำขอเป็นเจ้าของเรือ — ผู้ใช้กรอกข้อมูลเรือของตัวเอง (boat_data) แล้วรอ admin อนุมัติ
+// อนุมัติ = สร้างเรือใหม่จาก boat_data โดย owner_id = ผู้สมัคร แล้วเก็บ id ไว้ที่ boat_id + role เป็น owner (ถ้าเดิมเป็น user)
+export const ownerApplications = pgTable("owner_applications", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => usersTable.id, { onDelete: "cascade" }),
+  boatData: jsonb("boat_data").$type<BoatData>().notNull(), // ข้อมูลเรือที่ผู้สมัครกรอก (ผ่าน parseBoatBody แล้ว)
+  boatId: text("boat_id").references(() => boats.id, { onDelete: "set null" }), // เรือที่สร้างตอนอนุมัติ
+  phone: text("phone").notNull(),
+  note: text("note"),
+  status: ownerApplicationStatusEnum("status").default("pending").notNull(),
+  rejectReason: text("reject_reason"), // เหตุผลที่ admin ไม่อนุมัติ — แสดงให้ผู้ส่งเห็น
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  decidedAt: timestamp("decided_at"),
+});
+
+export const ownerProfileStatusEnum = pgEnum("owner_profile_status", ["pending", "approved", "rejected"]);
+// ประเภทคำขอที่รอตรวจ — ให้ admin แยกได้ว่าสมัครใหม่ / แก้ข้อมูลหลังอนุมัติ / ส่งใหม่หลังถูกปฏิเสธ
+export const ownerProfileRequestEnum = pgEnum("owner_profile_request", ["new", "edit", "resubmit"]);
+
+// ข้อมูลตัวตนชุดที่ admin อนุมัติล่าสุด — ใช้แสดงว่าคำขอแก้ไขเปลี่ยนอะไรไปบ้าง
+export type ApprovedIdentity = { fullName: string; phone: string; address: string };
+
+// ข้อมูลส่วนตัวของเจ้าของเรือ = ใบสมัครเป็นเจ้าของเรือ (หนึ่งแถวต่อผู้ใช้)
+// ขั้นที่ 1: admin อนุมัติตัวบุคคล (status approved + role owner) → ขั้นที่ 2: ส่งคำขอเพิ่มเรือได้ (owner_applications)
+// แก้ชื่อ / เบอร์ / ที่อยู่หลังอนุมัติ = กลับเป็น pending ให้ admin ตรวจใหม่
+export const ownerProfiles = pgTable("owner_profiles", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => usersTable.id, { onDelete: "cascade" }),
+  fullName: text("full_name").notNull(),
+  phone: text("phone").notNull(),
+  address: text("address").notNull(),
+  contactEmail: text("contact_email"), // อีเมลติดต่อ (ถ้ามี) — อาจไม่ใช่อีเมลที่ใช้ล็อกอิน
+  status: ownerProfileStatusEnum("status").default("pending").notNull(),
+  requestType: ownerProfileRequestEnum("request_type").default("new").notNull(),
+  approvedData: jsonb("approved_data").$type<ApprovedIdentity>(),
+  // เหตุผลที่ admin ไม่อนุมัติครั้งล่าสุด — แสดงให้ผู้สมัคร และให้ admin เห็นตอนผู้สมัครส่งใหม่ (ล้างเมื่ออนุมัติ)
+  rejectReason: text("reject_reason"),
+  decidedAt: timestamp("decided_at"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

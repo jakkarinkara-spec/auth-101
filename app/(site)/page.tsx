@@ -257,6 +257,12 @@ export default async function HomePage() {
             <a href="#top" className="underline">การยกเลิกและสภาพอากาศ</a>
             <a href="#top" className="underline">ความปลอดภัยบนเรือ</a>
           </div>
+          <div className="flex flex-col gap-2">
+            <span className="font-semibold text-white">เจ้าของเรือ</span>
+            <Link href="/owner" className="underline">
+              สมัครเป็นเจ้าของเรือ
+            </Link>
+          </div>
         </div>
       </footer>
     </>

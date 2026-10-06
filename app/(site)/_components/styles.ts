@@ -20,3 +20,19 @@ export const STATUS_BADGE = {
 } as const;
 
 export const badge = 'inline-flex rounded-full px-2.5 py-1 text-[13px] font-semibold';
+
+// ประเภทคำขอในหน้าอนุมัติของ admin — สีเดียวกันทุกหน้า: สร้าง = เขียว, แก้ไข = ส้ม, ส่งใหม่ = ฟ้า
+// badge = ป้าย, bar = แถบสีซ้ายของรายการ
+export const REQUEST_KIND = {
+  create: { label: 'สร้างใหม่', badge: 'bg-[#E3F5E9] text-[#1B6E37]', bar: 'border-l-[#2E9E57]' },
+  edit: { label: 'แก้ไขข้อมูล', badge: 'bg-(--nl-accent-soft) text-[#9A4A00]', bar: 'border-l-(--nl-accent)' },
+  resubmit: { label: 'ส่งใหม่หลังไม่ผ่าน', badge: 'bg-[#E5EFFA] text-[#1F5A9E]', bar: 'border-l-[#3D7CC9]' },
+} as const;
+export type RequestKind = keyof typeof REQUEST_KIND;
+
+// ป้ายสถานะใบสมัคร / คำขอเพิ่มเรือของเจ้าของเรือ
+export const APP_STATUS = {
+  pending: { label: 'รออนุมัติ', className: 'bg-(--nl-accent-soft) text-[#9A4A00]' },
+  approved: { label: 'อนุมัติแล้ว', className: 'bg-(--nl-tint) text-(--nl-teal-dk)' },
+  rejected: { label: 'ไม่อนุมัติ', className: 'bg-[#EDF1F1] text-[#6B7C84]' },
+} as const;

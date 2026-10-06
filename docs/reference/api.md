@@ -122,7 +122,7 @@ UI อยู่ที่ `/boats/[id]` — ถ้ายังไม่ล็อ�
 
 ### `PATCH /api/bookings/[id]`
 
-เปลี่ยนสถานะคำขอจอง — ต้องล็อกอิน (ตรวจ `auth()` แล้ว `isAdmin()` อ่าน `users.role` จาก DB)
+เปลี่ยนสถานะคำขอจอง — ต้องล็อกอิน (ตรวจ `auth()` แล้ว `isAdmin()` อ่าน `users.role` จาก DB; สิทธิ์เจ้าของเรือเช็คจาก `boats.owner_id` ใน WHERE เดียวกัน)
 
 **Request body**: `{ "status": "confirmed" | "cancelled" }`
 
@@ -132,6 +132,8 @@ UI อยู่ที่ `/boats/[id]` — ถ้ายังไม่ล็อ�
 |----------|----------|----------|
 | admin | `confirmed` | รายการใดก็ได้ที่เป็น `pending` |
 | admin | `cancelled` | รายการใดก็ได้ที่เป็น `pending` หรือ `confirmed` |
+| เจ้าของเรือ | `confirmed` | คำขอของเรือที่ตัวเองเป็นเจ้าของ (`boat_id IN (select id from boats where owner_id = session)`) ที่เป็น `pending` |
+| เจ้าของเรือ | `cancelled` | คำขอของเรือตัวเองที่เป็น `pending` หรือ `confirmed` |
 | ลูกค้า | `cancelled` | เฉพาะรายการของตัวเอง (`userId` = session) ที่ยังเป็น `pending` |
 
 รายการที่ `cancelled` แล้วเปลี่ยนกลับไม่ได้ — วันนั้นถูกปล่อยว่างแล้ว (unique index ไม่นับรายการที่ยกเลิก) อาจมีคนอื่นจองไปแล้ว
@@ -141,8 +143,7 @@ UI อยู่ที่ `/boats/[id]` — ถ้ายังไม่ล็อ�
 | `200 OK` | สำเร็จ — คืน row ที่แก้แล้ว |
 | `400 Bad Request` | `status` ไม่ใช่ `confirmed` / `cancelled` |
 | `401 Unauthorized` | ยังไม่ได้ล็อกอิน |
-| `403 Forbidden` | ไม่ใช่ admin แต่ส่ง `status: "confirmed"` |
-| `404 Not Found` | ไม่มีคำขอจองที่ `id` นี้ หรือ (ลูกค้า) เป็นรายการของคนอื่น — ตอบเหมือนกันเพื่อไม่บอกว่ามีอยู่ |
+| `404 Not Found` | ไม่มีคำขอจองที่ `id` นี้ หรือผู้เรียกไม่ใช่ admin / ลูกค้าเจ้าของคำขอ / เจ้าของเรือ — ตอบเหมือนกันเพื่อไม่บอกว่ามีอยู่ |
 | `409 Conflict` | สถานะปัจจุบันเปลี่ยนแบบนั้นไม่ได้ (เช่น ยืนยันรายการที่ยกเลิกแล้ว หรือลูกค้ายกเลิกรายการที่ยืนยันแล้ว) |
 
 UI อยู่ที่ `/admin`
@@ -192,7 +193,7 @@ UI อยู่ที่ `/admin/boats/new` และ `/admin/boats/[id]` (ล�
 
 ### `PATCH /api/boats/[id]/active`
 
-เปิด / ปิดรับจอง (admin เท่านั้น) — ใช้แทนการลบเรือ คำขอจองเดิมไม่ถูกแก้หรือยกเลิก
+เปิด / ปิดรับจอง (admin หรือเจ้าของเรือลำนั้น — `canManageBoat()`) — ใช้แทนการลบเรือ คำขอจองเดิมไม่ถูกแก้หรือยกเลิก
 
 **Request body**: `{ "active": true | false }`
 
@@ -208,7 +209,7 @@ UI: ปุ่ม "ปิดรับจอง" (กดยืนยันอี�
 
 ### `POST /api/boats/[id]/closures`
 
-ปิดรับจองเป็นรายวัน (admin เท่านั้น) — หนึ่งแถวต่อวันในตาราง `boat_closures` วันที่ปิดอยู่แล้วข้ามไป (ไม่ error)
+ปิดรับจองเป็นรายวัน (admin หรือเจ้าของเรือลำนั้น) — หนึ่งแถวต่อวันในตาราง `boat_closures` วันที่ปิดอยู่แล้วข้ามไป (ไม่ error)
 
 **Request body**: `{ "from": "YYYY-MM-DD", "to"?: "YYYY-MM-DD", "reason"?: string }` — ไม่ส่ง `to` = ปิดวันเดียว
 
@@ -221,7 +222,7 @@ UI: ปุ่ม "ปิดรับจอง" (กดยืนยันอี�
 
 ### `DELETE /api/boats/[id]/closures/[closureId]`
 
-เปิดรับจองวันนั้นกลับ (ลบแถวใน `boat_closures`) — admin เท่านั้น
+เปิดรับจองวันนั้นกลับ (ลบแถวใน `boat_closures`) — admin หรือเจ้าของเรือลำนั้น
 
 | Status | เงื่อนไข |
 |--------|----------|
@@ -230,6 +231,69 @@ UI: ปุ่ม "ปิดรับจอง" (กดยืนยันอี�
 | `404 Not Found` | ไม่มีวันปิดนี้ของเรือลำนี้ |
 
 UI: หัวข้อ "วันปิดรับจอง" ในหน้า `/admin/boats/[id]`
+
+---
+
+## Endpoints สำหรับเจ้าของเรือ (Owners)
+
+### `POST /api/owner-applications`
+
+ผู้ใช้ที่ล็อกอินส่งคำขอเป็นเจ้าของเรือ พร้อมข้อมูลเรือของตัวเอง — **ต้องบันทึกข้อมูลส่วนตัว (`PUT /api/owner-profile`) ก่อน** เบอร์โทรในคำขอคัดลอกจากข้อมูลส่วนตัว — **Request body**: `{ "boat": { ...ฟิลด์เดียวกับ POST /api/boats }, "note"?: string }`
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `201 Created` | ส่งคำขอแล้ว — คืน `{ id, status: "pending" }` |
+| `400 Bad Request` | ข้อมูลเรือไม่ผ่าน `parseBoatBody` |
+| `401 Unauthorized` | ยังไม่ได้ล็อกอิน |
+| `409 Conflict` | ยังไม่มีข้อมูลส่วนตัว (`Owner profile is required before applying`), ยังไม่ผ่านการอนุมัติตัวบุคคล (`Owner is not approved yet`) หรือมีคำขอที่รออนุมัติครบ 3 รายการแล้ว |
+
+### `PUT /api/owner-profile`
+
+บันทึก / แก้ไขข้อมูลส่วนตัวเจ้าของเรือของผู้ใช้ที่ล็อกอิน (upsert ตาม `userId` จาก session) — **Request body**: `{ "fullName": string, "phone": string, "address": string, "contactEmail"?: string }`
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `200 OK` | บันทึกแล้ว — คืนแถวที่บันทึก |
+| `400 Bad Request` | ไม่มีชื่อ / ที่อยู่, เบอร์โทรไม่ถูกต้อง (ตัวเลข 9–15 หลัก) หรืออีเมลติดต่อไม่ถูกต้อง |
+| `401 Unauthorized` | ยังไม่ได้ล็อกอิน |
+
+สถานะหลังบันทึก: ใหม่ / เคยถูกปฏิเสธ → `pending`; อนุมัติแล้วแต่แก้ชื่อ / เบอร์ / ที่อยู่ → `pending` (ตรวจใหม่); แก้แค่อีเมลติดต่อ → คงเดิม
+
+### `PATCH /api/owner-profiles/[userId]`
+
+admin อนุมัติ / ปฏิเสธผู้สมัครเป็นเจ้าของเรือ (ขั้นที่ 1 — ตัวบุคคล) — **Request body**: `{ "action": "approve" | "reject", "reason"?: string }` — `reject` ต้องมี `reason` (≤ 500 ตัวอักษร) เก็บใน `reject_reason` ให้ผู้สมัครเห็น; อนุมัติแล้วล้างเหตุผล อนุมัติ → `status = approved` + role `user` → `owner`
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `200 OK` | คืน `{ userId, status }` |
+| `400 Bad Request` | `action` ไม่ถูกต้อง หรือ `reject` โดยไม่มี `reason` |
+| `401` / `403` | ยังไม่ได้ล็อกอิน / ไม่ใช่ admin |
+| `404 Not Found` | ไม่มีข้อมูลส่วนตัวของผู้ใช้นี้ |
+| `409 Conflict` | ไม่ได้อยู่ในสถานะ `pending` แล้ว |
+
+### `PATCH /api/owner-applications/[id]`
+
+admin อนุมัติ / ปฏิเสธ — **Request body**: `{ "action": "approve" | "reject", "reason"?: string }` — `reject` ต้องมี `reason` (≤ 500 ตัวอักษร) แสดงให้ผู้ส่งเห็นในหน้า `/owner/boat-requests`
+
+อนุมัติทำตามลำดับ (neon-http ไม่มี interactive transaction): เปลี่ยนคำขอเป็น `approved` เฉพาะถ้ายัง `pending` (กันอนุมัติซ้ำ / สร้างเรือซ้ำ) → สร้างเรือจาก `boat_data` โดย `owner_id` = ผู้สมัคร (ตรวจข้อมูลซ้ำ ไม่ผ่าน = คืนเป็น `pending` + 400) → เก็บ `boat_id` → role `user` → `owner`
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `200 OK` | คืน `{ id, status }` (อนุมัติ: มี `boatId` ของเรือที่สร้าง) |
+| `400 Bad Request` | `action` ไม่ถูกต้อง, `reject` โดยไม่มี `reason` หรือ `boat_data` ใช้ไม่ได้แล้ว |
+| `401` / `403` | ยังไม่ได้ล็อกอิน / ไม่ใช่ admin |
+| `404 Not Found` | ไม่มีคำขอนี้ |
+| `409 Conflict` | คำขอไม่ได้อยู่ในสถานะ `pending` แล้ว หรือ (อนุมัติ) ผู้ส่งยังไม่ผ่านการอนุมัติตัวบุคคล |
+
+### `DELETE /api/boats/[id]/owner`
+
+admin ถอดเจ้าของเรือ (`owner_id` → null) — สิทธิ์ของเจ้าของเดิมกับเรือลำนี้หมดทันที
+
+| Status | เงื่อนไข |
+|--------|----------|
+| `204 No Content` | สำเร็จ |
+| `401` / `403` | ยังไม่ได้ล็อกอิน / ไม่ใช่ admin |
+| `404 Not Found` | ไม่มีเรือที่ `id` นี้ |
 
 ---
 
@@ -328,6 +392,7 @@ endpoint นี้เปิดให้ระบบภายนอกดึง�
 | `tags` | text[] | NOT NULL | `'{}'` |
 | `priceHalf` / `priceFull` / `priceNight` | integer | nullable (null = ไม่รับทริปแบบนั้น) | — |
 | `active` | boolean | NOT NULL (false = ปิดรับจอง) | `true` |
+| `ownerId` | text | nullable, FK → `users.id` (ON DELETE SET NULL) — เจ้าของเรือ | — |
 | `createdAt` | timestamp | NOT NULL | `now()` |
 
 ### `bookings`

@@ -1,20 +1,17 @@
 import Link from 'next/link';
 import { heading } from '../../../_components/ui';
-import { AdminHeader, NotAdmin, adminSession } from '../../guard';
+import { adminSession } from '../../guard';
 import BoatForm from '../boat-form';
 
 export default async function NewBoatPage() {
-  if (!(await adminSession('/admin/boats/new'))) return <NotAdmin />;
+  if (!(await adminSession('/admin/boats/new'))) return null; // layout แสดงข้อความแจ้งแล้ว
 
   return (
-    <>
-      <AdminHeader />
-      <main className="px-6 pt-12 pb-24">
-        <div className="mx-auto flex max-w-[880px] flex-col gap-8">
+    <div className="flex max-w-[880px] flex-col gap-8">
           <div className="flex flex-col gap-2">
             <p className="text-[15px] text-(--nl-muted)">
-              <Link href="/admin#boats" className="text-(--nl-teal) hover:text-(--nl-teal-dk)">
-                แดชบอร์ด
+              <Link href="/admin/boats" className="text-(--nl-teal) hover:text-(--nl-teal-dk)">
+                เรือ
               </Link>{' '}
               / เพิ่มเรือ
             </p>
@@ -37,8 +34,6 @@ export default async function NewBoatPage() {
               priceNight: null,
             }}
           />
-        </div>
-      </main>
-    </>
+    </div>
   );
 }

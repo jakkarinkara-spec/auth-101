@@ -88,6 +88,13 @@ export default async function MyBookingsPage() {
             — ยกเลิกฟรีก่อนออกเรือ 72 ชม. หากคลื่นลมแรงจนออกเรือไม่ได้
             เลื่อนวันหรือคืนเงินเต็มจำนวน
           </p>
+          <p className="text-sm text-(--nl-muted)">
+            เป็นเจ้าของเรือ?{' '}
+            <Link href="/owner" className="font-semibold text-(--nl-teal) hover:text-(--nl-teal-dk)">
+              สมัครเป็นเจ้าของเรือ
+            </Link>{' '}
+            เพื่อรับคำขอจองและจัดการวันปิดรับจองของเรือตัวเอง
+          </p>
         </div>
       </main>
     </>

@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import Link from 'next/link';
 import { signOutAction } from './actions';
 import { INCLUDED } from '@/app/lib/boats';
-import { isAdmin } from '@/app/lib/admin';
+import { getRole } from '@/app/lib/admin';
 import { heading } from './styles';
 
 // ส่วนประกอบที่ใช้ซ้ำในหน้าเว็บเช่าเรือ
@@ -64,7 +64,7 @@ function AccountLink({ href, current, children }: { href: string; current: boole
 export async function SiteNav({ active, back }: { active?: string; back?: { href: string; label: string } }) {
   const session = await auth();
   const user = session?.user;
-  const admin = user?.id ? await isAdmin(user.id) : false;
+  const role = user?.id ? await getRole(user.id) : null;
 
   return (
     <>
@@ -81,7 +81,19 @@ export async function SiteNav({ active, back }: { active?: string; back?: { href
             <AccountLink href="/bookings" current={active === 'bookings'}>
               การจองของฉัน
             </AccountLink>
-            {admin && (
+            {/* role ใช้แค่เลือกเมนูที่แสดง — สิทธิ์จริงเช็คที่หน้า / API จาก boats.owner_id */}
+            {role === 'owner' && (
+              <AccountLink href="/owner" current={active === 'owner'}>
+                แดชบอร์ดเจ้าของเรือ
+              </AccountLink>
+            )}
+            {/* ผู้ใช้ทั่วไป: ทางเข้าสมัครเป็นเจ้าของเรือ — /owner แสดงสถานะใบสมัคร (admin อนุมัติแล้วเมนูนี้กลายเป็น "เรือของฉัน") */}
+            {role === 'user' && (
+              <AccountLink href="/owner" current={active === 'owner'}>
+                สมัครเป็นเจ้าของเรือ
+              </AccountLink>
+            )}
+            {role === 'admin' && (
               <AccountLink href="/admin" current={active === 'admin'}>
                 แอดมิน
               </AccountLink>
