@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/app/db/index";
 import { bookings } from "@/app/db/schema";
+import { isAdmin } from "@/app/lib/admin";
 import { NextResponse } from "next/server";
 import { parseBookingBody } from "./validate";
 
@@ -16,6 +17,10 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+  // admin เป็นคนดูแลระบบ ไม่ใช่ลูกค้า — จองเรือไม่ได้ (เช็ค role จาก DB ไม่ใช่ JWT)
+  if (await isAdmin(session.user.id)) {
+    return NextResponse.json({ message: "Admins cannot make bookings" }, { status: 403 });
   }
 
   const parsed = await parseBookingBody(await req.json().catch(() => null));

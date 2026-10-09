@@ -6,8 +6,20 @@ import { field, fieldLabel, heading, primaryButton } from '../../_components/sty
 
 export type ProfileValues = { fullName: string; phone: string; address: string; contactEmail: string };
 
-// ฟอร์มข้อมูลส่วนตัวเจ้าของเรือ — บันทึกแล้วไปหน้า next (ค่าเริ่มต้น /owner) หรืออยู่หน้าเดิม
-export default function ProfileForm({ initial, next, defaultEmail }: { initial: ProfileValues; next: string | null; defaultEmail: string }) {
+// ฟอร์มข้อมูลส่วนตัวเจ้าของเรือ — บันทึกแล้วไปหน้า next หรืออยู่หน้าเดิม (เจ้าของเรือที่อนุมัติแล้ว = ส่งคำขอแก้ไข)
+// (มีคำขอแก้ไขรอ admin ตรวจ → หน้าไม่แสดงฟอร์มนี้ ใช้ปุ่มยกเลิกคำขอแทน)
+// editRequest = เจ้าของเรือที่อนุมัติแล้ว — ปุ่มเป็น "ส่งคำขอแก้ไข" (ไม่ได้บันทึกทันที ต้องรอ admin อนุมัติ)
+export default function ProfileForm({
+  initial,
+  next,
+  defaultEmail,
+  editRequest = false,
+}: {
+  initial: ProfileValues;
+  next: string | null;
+  defaultEmail: string;
+  editRequest?: boolean;
+}) {
   const router = useRouter();
   const [v, setV] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -23,7 +35,7 @@ export default function ProfileForm({ initial, next, defaultEmail }: { initial: 
     const res = await fetch('/api/owner-profile', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(v),
+      body: JSON.stringify({ phone: v.phone, address: v.address, contactEmail: v.contactEmail }),
     }).catch(() => null);
     setSaving(false);
 
@@ -31,7 +43,8 @@ export default function ProfileForm({ initial, next, defaultEmail }: { initial: 
       if (next) {
         router.push(next);
       } else {
-        setMessage({ ok: true, text: 'บันทึกข้อมูลแล้ว' });
+        // เจ้าของเรือที่อนุมัติแล้ว: ส่งคำขอแก้ไขแล้ว — refresh แล้วหน้าแสดงกล่องคำขอแทนฟอร์ม
+        setMessage({ ok: true, text: 'ส่งคำขอแก้ไขแล้ว — รอผู้ดูแลระบบอนุมัติ ระหว่างนี้ยังใช้ข้อมูลเดิม' });
       }
       router.refresh();
       return;
@@ -40,7 +53,11 @@ export default function ProfileForm({ initial, next, defaultEmail }: { initial: 
     const msg = String(body?.message ?? '');
     setMessage({
       ok: false,
-      text: msg.includes('Phone')
+      text: msg.includes('already pending')
+        ? 'มีคำขอแก้ไขรออนุมัติอยู่ — รอผู้ดูแลระบบตรวจ หรือยกเลิกคำขอก่อนจึงส่งใหม่ได้'
+        : msg.includes('No changes')
+          ? 'ข้อมูลเหมือนที่ใช้อยู่ ไม่มีอะไรให้ส่ง'
+          : msg.includes('Phone')
         ? 'เบอร์โทรไม่ถูกต้อง'
         : msg.includes('email')
           ? 'อีเมลไม่ถูกต้อง'
@@ -54,10 +71,15 @@ export default function ProfileForm({ initial, next, defaultEmail }: { initial: 
     <form onSubmit={submit} className="flex flex-col gap-5 rounded-[20px] border border-(--nl-line) bg-white p-6 sm:p-8">
       <h2 className={`${heading} text-[22px]`}>ข้อมูลส่วนตัว</h2>
       <div className="grid gap-5 sm:grid-cols-2">
-        <label className={fieldLabel}>
-          ชื่อ-นามสกุล
-          <input value={v.fullName} onChange={set('fullName')} required maxLength={200} autoComplete="name" className={field} />
-        </label>
+        {/* คำอธิบายอยู่ใต้ช่อง — ถ้าอยู่ในป้ายจะขึ้นบรรทัดใหม่ ทำให้ช่องชื่อเหลื่อมกับช่องเบอร์โทร */}
+        <div className="flex flex-col gap-2">
+          <label className={fieldLabel}>
+            ชื่อ
+            {/* ชื่อเจ้าของเรือ = ชื่อที่ลงทะเบียน — แก้ที่นี่ไม่ได้ (server ใช้ชื่อจากบัญชีเสมอ) */}
+            <input value={v.fullName} readOnly aria-readonly="true" className={`${field} cursor-not-allowed bg-(--nl-bg) text-(--nl-muted)`} />
+          </label>
+          <span className="text-[13px] text-(--nl-muted)">ชื่อบัญชี — แก้ได้ทันทีที่หน้าโปรไฟล์ของฉัน</span>
+        </div>
         <label className={fieldLabel}>
           เบอร์โทร
           <input
@@ -86,7 +108,14 @@ export default function ProfileForm({ initial, next, defaultEmail }: { initial: 
       </label>
       <label className={fieldLabel}>
         อีเมลติดต่อ <span className="font-normal text-(--nl-muted)">(ถ้ามี — เว้นว่างได้)</span>
-        <input type="email" value={v.contactEmail} onChange={set('contactEmail')} placeholder={defaultEmail} maxLength={200} className={field} />
+        <input
+          type="email"
+          value={v.contactEmail}
+          onChange={set('contactEmail')}
+          placeholder={defaultEmail}
+          maxLength={200}
+          className={field}
+        />
       </label>
 
       {message && (
@@ -99,7 +128,7 @@ export default function ProfileForm({ initial, next, defaultEmail }: { initial: 
       )}
 
       <button type="submit" disabled={saving} className={`${primaryButton} self-end px-8`}>
-        {saving ? 'กำลังบันทึก…' : 'บันทึก'}
+        {editRequest ? (saving ? 'กำลังส่งคำขอ…' : 'ส่งคำขอแก้ไข') : saving ? 'กำลังบันทึก…' : 'บันทึก'}
       </button>
     </form>
   );

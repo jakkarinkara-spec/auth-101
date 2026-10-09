@@ -66,7 +66,6 @@ export default function BoatForm({ boat = EMPTY, mode = 'admin' }: { boat?: Boat
   const [tags, setTags] = useState<string[]>(boat.tags);
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
-  const [done, setDone] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -80,7 +79,6 @@ export default function BoatForm({ boat = EMPTY, mode = 'admin' }: { boat?: Boat
       return;
     }
     setSaving(true);
-    setDone(false);
     const res = apply
       ? await fetch('/api/owner-applications', {
           method: 'POST',
@@ -94,17 +92,9 @@ export default function BoatForm({ boat = EMPTY, mode = 'admin' }: { boat?: Boat
         }).catch(() => null);
     setSaving(false);
 
-    if (res?.ok && apply) {
-      // ส่งคำขอแล้ว — ล้างฟอร์ม อยู่หน้าเดิมให้เห็นคำขอในรายการ "คำขอของฉัน"
-      setV({ ...v, name: '', kind: '', captain: '', lengthM: '', seats: '', description: '', engine: '', equipment: '', priceHalf: '', priceFull: '', priceNight: '' });
-      setTags([]);
-      setNote('');
-      setDone(true);
-      router.refresh();
-      return;
-    }
+    // สำเร็จ → กลับหน้ารายการ (เจ้าของเรือ: คำขอเพิ่มเรือ, admin: จัดการเรือ)
     if (res?.ok) {
-      router.push('/admin/boats');
+      router.push(apply ? '/owner/boat-requests' : '/admin/boats');
       router.refresh();
       return;
     }
@@ -244,12 +234,6 @@ export default function BoatForm({ boat = EMPTY, mode = 'admin' }: { boat?: Boat
             <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} className={field} />
           </label>
         </section>
-      )}
-
-      {done && (
-        <p role="status" className="rounded-xl bg-(--nl-tint) px-4 py-3 text-[15px] text-(--nl-teal-dk)">
-          ส่งคำขอแล้ว — ผู้ดูแลระบบอนุมัติแล้วเรือจะขึ้นในแดชบอร์ดเจ้าของเรือ
-        </p>
       )}
 
       {error && (

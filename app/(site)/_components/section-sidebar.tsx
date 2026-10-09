@@ -28,8 +28,8 @@ export default function SectionSidebar({ label, items }: { label: string; items:
   const pathname = usePathname();
 
   return (
-    <nav aria-label={label} className="lg:sticky lg:top-6">
-      <ul className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-1 lg:mx-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:rounded-[20px] lg:border lg:border-(--nl-line) lg:bg-white lg:p-3">
+    <nav aria-label={label}>
+      <ul className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0">
         {items.map((it) => {
           const active = it.exact ? pathname === it.href : pathname === it.href || pathname.startsWith(`${it.href}/`);
           return (
@@ -65,15 +65,19 @@ export default function SectionSidebar({ label, items }: { label: string; items:
   );
 }
 
-// โครงหน้า: sidebar ซ้าย + เนื้อหาขวา (จอเล็กซ้อนกัน)
+// โครงหน้า: sidebar ชิดขอบซ้ายสุดของจอ (แถบขาวเต็มความสูง ค้างอยู่ตอนเลื่อน)
+// + เนื้อหาจัดกึ่งกลางพื้นที่ที่เหลือ (กว้างสุด 1200px — จอกว้างไม่ชิดซ้ายติดเมนู)
+// จอเล็ก: เมนูเป็นแถบเลื่อนแนวนอนอยู่ด้านบนเนื้อหา
 export function SidebarShell({ sidebar, caption, children }: { sidebar: React.ReactNode; caption?: string; children: React.ReactNode }) {
   return (
-    <div className="mx-auto grid max-w-[1320px] gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
-      <aside className="flex flex-col gap-3">
-        {caption && <p className="hidden px-1 text-[13px] text-(--nl-muted) lg:block">{caption}</p>}
+    <div className="flex flex-1 flex-col lg:flex-row">
+      <aside className="border-b border-(--nl-line) bg-white px-6 py-3 lg:sticky lg:top-0 lg:h-dvh lg:self-start lg:w-[248px] lg:flex-none lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-3 lg:py-6">
+        {caption && <p className="mb-3 hidden px-3 text-[13px] text-(--nl-muted) lg:block">{caption}</p>}
         {sidebar}
       </aside>
-      <div className="flex min-w-0 flex-col gap-8">{children}</div>
+      <main className="min-w-0 flex-1 px-6 pt-10 pb-24 lg:px-10">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8">{children}</div>
+      </main>
     </div>
   );
 }

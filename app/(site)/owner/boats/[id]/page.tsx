@@ -40,7 +40,7 @@ export default async function OwnerBoatPage({ params }: Ctx) {
   const closures = closureRows.map((c) => ({ ...c, booked: bookedDates.has(c.date) }));
 
   return (
-    <div className="flex max-w-[880px] flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-[880px] flex-col gap-8">
           <div className="flex flex-col gap-2">
             <p className="text-[15px] text-(--nl-muted)">
               <Link href="/owner/boats" className="text-(--nl-teal) hover:text-(--nl-teal-dk)">

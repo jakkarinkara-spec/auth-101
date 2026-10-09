@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "phones" text[] DEFAULT '{}'::text[] NOT NULL;

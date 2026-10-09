@@ -4,6 +4,7 @@ import { auth } from '@/auth';
 import { db } from '@/app/db/index';
 import { boatClosures, boats, bookings } from '@/app/db/schema';
 import { CALENDAR_DAYS, TRIPS, addDays, bangkokToday, boatPrice, isTripType, isYmd, portLabel } from '@/app/lib/boats';
+import { isAdmin } from '@/app/lib/admin';
 import { firstParam, type SearchParams } from '@/app/lib/search';
 import { PortBadge, Placeholder, SiteHeader, SiteNav, heading } from '../../_components/ui';
 import BookingForm from './booking-form';
@@ -30,6 +31,7 @@ export default async function BoatDetailPage({ params, searchParams }: Ctx) {
     auth(),
   ]);
   if (!boat) notFound();
+  const admin = session?.user?.id ? await isAdmin(session.user.id) : false;
 
   // full = เลือกไม่ได้ (มีคนจองแล้ว หรือ admin ปิดรับจองวันนั้น), closed = ใช้แยกป้าย "ปิด" กับ "เต็ม"
   const bookedSet = new Set(booked.map((b) => b.date));
@@ -87,6 +89,7 @@ export default async function BoatDetailPage({ params, searchParams }: Ctx) {
             days={days}
             initial={initial}
             signedIn={Boolean(session?.user?.id)}
+            admin={admin}
             closed={!boat.active}
           >
             {/* ข้อมูลเรือ — render ฝั่ง server แล้วส่งเข้าไปเป็น children ของฟอร์ม */}

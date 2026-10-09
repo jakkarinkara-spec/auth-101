@@ -14,6 +14,8 @@ export const usersTable = pgTable("users", {
   password: text("password").notNull(), // เก็บ hash ไม่เก็บ plain text
   createdAt: timestamp("created_at").defaultNow().notNull(),
   role: roleEnum("role").default("user").notNull(),
+  // เบอร์ติดต่อของผู้ใช้ (สูงสุด 3 เบอร์ — เช็คใน API) แก้ที่ /account; admin / เจ้าของเรือเห็นในตารางคำขอจอง
+  phones: text("phones").array().notNull().default(sql`'{}'::text[]`),
 });
 
 // ===== เช่าเรือตกปลา (น้ำลึก) =====
@@ -117,10 +119,13 @@ export const ownerProfileRequestEnum = pgEnum("owner_profile_request", ["new", "
 
 // ข้อมูลตัวตนชุดที่ admin อนุมัติล่าสุด — ใช้แสดงว่าคำขอแก้ไขเปลี่ยนอะไรไปบ้าง
 export type ApprovedIdentity = { fullName: string; phone: string; address: string };
+// ข้อมูลที่เจ้าของเรือ (อนุมัติแล้ว) ขอแก้ — รอ admin ตรวจ ระหว่างนั้นยังใช้ข้อมูลเดิมในคอลัมน์หลัก
+export type PendingOwnerEdit = { phone: string; address: string; contactEmail: string | null };
 
 // ข้อมูลส่วนตัวของเจ้าของเรือ = ใบสมัครเป็นเจ้าของเรือ (หนึ่งแถวต่อผู้ใช้)
 // ขั้นที่ 1: admin อนุมัติตัวบุคคล (status approved + role owner) → ขั้นที่ 2: ส่งคำขอเพิ่มเรือได้ (owner_applications)
-// แก้ชื่อ / เบอร์ / ที่อยู่หลังอนุมัติ = กลับเป็น pending ให้ admin ตรวจใหม่
+// แก้เบอร์ / ที่อยู่ / อีเมลติดต่อหลังอนุมัติ = เก็บใน pending_data รอ admin ตรวจ (สถานะยัง approved ใช้ข้อมูลเดิมจนกว่าจะอนุมัติ)
+// ชื่อ = ชื่อบัญชี เปลี่ยนที่ /account ได้ทันที
 export const ownerProfiles = pgTable("owner_profiles", {
   userId: text("user_id")
     .primaryKey()
@@ -132,8 +137,29 @@ export const ownerProfiles = pgTable("owner_profiles", {
   status: ownerProfileStatusEnum("status").default("pending").notNull(),
   requestType: ownerProfileRequestEnum("request_type").default("new").notNull(),
   approvedData: jsonb("approved_data").$type<ApprovedIdentity>(),
+  pendingData: jsonb("pending_data").$type<PendingOwnerEdit>(), // null = ไม่มีคำขอแก้ไขค้างอยู่
   // เหตุผลที่ admin ไม่อนุมัติครั้งล่าสุด — แสดงให้ผู้สมัคร และให้ admin เห็นตอนผู้สมัครส่งใหม่ (ล้างเมื่ออนุมัติ)
   rejectReason: text("reject_reason"),
   decidedAt: timestamp("decided_at"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ประวัติคำขอแก้ข้อมูลเจ้าของเรือ (หลังอนุมัติ) ที่ตัดสินแล้ว — บันทึกตอน admin อนุมัติ / ไม่อนุมัติ หรือเจ้าของเรือยกเลิก
+// คำขอที่ยังรอตรวจอยู่ใน owner_profiles.pending_data (ไม่อยู่ในตารางนี้)
+export const ownerProfileEditStatusEnum = pgEnum("owner_profile_edit_status", ["approved", "rejected", "cancelled"]);
+
+export const ownerProfileEdits = pgTable("owner_profile_edits", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => usersTable.id, { onDelete: "cascade" }),
+  before: jsonb("before").$type<PendingOwnerEdit>().notNull(), // ข้อมูลที่ใช้อยู่ตอนขอแก้
+  requested: jsonb("requested").$type<PendingOwnerEdit>().notNull(), // ค่าที่ขอแก้
+  status: ownerProfileEditStatusEnum("status").notNull(),
+  rejectReason: text("reject_reason"),
+  decidedBy: text("decided_by").references(() => usersTable.id, { onDelete: "set null" }), // admin ที่ตัดสิน (null = เจ้าของเรือยกเลิกเอง)
+  submittedAt: timestamp("submitted_at").notNull(),
+  decidedAt: timestamp("decided_at").defaultNow().notNull(),
 });

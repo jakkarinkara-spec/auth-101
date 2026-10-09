@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { desc, eq } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { getAccount } from '@/app/lib/admin';
 import { db } from '@/app/db/index';
 import { boats, bookings } from '@/app/db/schema';
 import { addonLabel, baht, bangkokToday, portLabel, thaiDate, tripLabel, TRIPS } from '@/app/lib/boats';
@@ -45,7 +46,7 @@ export default async function MyBookingsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login?callbackUrl=/bookings');
 
-  const rows = await loadBookings(session.user.id);
+  const [rows, account] = await Promise.all([loadBookings(session.user.id), getAccount(session.user.id)]);
   const today = bangkokToday();
   // กำลังจะถึง = ยังไม่ถึงวันและไม่ถูกยกเลิก เรียงวันใกล้สุดก่อน / ที่เหลือเรียงล่าสุดก่อน
   const upcoming = rows.filter((r) => r.tripDate >= today && r.status !== 'cancelled').reverse();
@@ -61,7 +62,7 @@ export default async function MyBookingsPage() {
         <div className="mx-auto flex max-w-[960px] flex-col gap-10">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="flex flex-col gap-2">
-              <p className="text-[15px] text-(--nl-muted)">{session.user.name ?? session.user.email}</p>
+              <p className="text-[15px] text-(--nl-muted)">{account?.name ?? account?.email}</p>
               <h1 className={`${heading} text-[44px] leading-tight`}>การจองของฉัน</h1>
             </div>
             <Link href="/boats" className="rounded-xl bg-(--nl-teal) px-5 py-3 font-semibold text-white hover:bg-(--nl-teal-dk)">
@@ -88,6 +89,7 @@ export default async function MyBookingsPage() {
             — ยกเลิกฟรีก่อนออกเรือ 72 ชม. หากคลื่นลมแรงจนออกเรือไม่ได้
             เลื่อนวันหรือคืนเงินเต็มจำนวน
           </p>
+          {account?.role !== 'admin' && (
           <p className="text-sm text-(--nl-muted)">
             เป็นเจ้าของเรือ?{' '}
             <Link href="/owner" className="font-semibold text-(--nl-teal) hover:text-(--nl-teal-dk)">
@@ -95,6 +97,7 @@ export default async function MyBookingsPage() {
             </Link>{' '}
             เพื่อรับคำขอจองและจัดการวันปิดรับจองของเรือตัวเอง
           </p>
+          )}
         </div>
       </main>
     </>

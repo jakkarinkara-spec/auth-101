@@ -3,6 +3,7 @@ import { and, count, eq, gte, sum } from 'drizzle-orm';
 import { db } from '@/app/db/index';
 import { boats, bookings, ownerApplications, ownerProfiles } from '@/app/db/schema';
 import { baht, bangkokToday } from '@/app/lib/boats';
+import { OWNER_REVIEW_WHERE } from '@/app/lib/admin';
 import { heading } from '../_components/ui';
 import { adminSession } from './guard';
 
@@ -19,7 +20,7 @@ export default async function AdminOverview() {
     db.select({ n: count(), total: sum(bookings.total) }).from(bookings).where(and(eq(bookings.status, 'confirmed'), upcoming)),
     db.select({ n: count() }).from(boats),
     db.select({ n: count() }).from(boats).where(eq(boats.active, true)),
-    db.select({ n: count() }).from(ownerProfiles).where(eq(ownerProfiles.status, 'pending')),
+    db.select({ n: count() }).from(ownerProfiles).where(OWNER_REVIEW_WHERE),
     db.select({ n: count() }).from(ownerApplications).where(eq(ownerApplications.status, 'pending')),
   ]);
 
@@ -31,7 +32,7 @@ export default async function AdminOverview() {
   ];
   const todos = [
     { href: '/admin/bookings', label: 'คำขอจองรอยืนยัน', n: pending.n },
-    { href: '/admin/owners', label: 'ผู้สมัครเจ้าของเรือรออนุมัติ', n: owners.n },
+    { href: '/admin/owners', label: 'ผู้สมัคร / คำขอแก้ไขข้อมูลเจ้าของเรือรออนุมัติ', n: owners.n },
     { href: '/admin/boat-requests', label: 'คำขอเพิ่มเรือรออนุมัติ', n: requests.n },
   ];
 

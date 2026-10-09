@@ -5,16 +5,15 @@ import { boats, bookings, usersTable } from '@/app/db/schema';
 import { TRIPS, baht, bangkokToday, boatPrice } from '@/app/lib/boats';
 import { heading } from '../../_components/ui';
 import ActiveToggle from './active-toggle';
-import RemoveOwner from '../remove-owner';
 import { adminSession } from '../guard';
 
-// /admin/boats — เรือทั้งหมด (เปิดรับจองก่อน) + เพิ่ม / แก้ไข / เปิด-ปิด / ถอดเจ้าของ
+// /admin/boats — เรือทั้งหมด (เปิดรับจองก่อน) + เพิ่ม / แก้ไข / เปิด-ปิด
 export default async function AdminBoats() {
   if (!(await adminSession('/admin/boats'))) return null;
 
   const [boatList, boatLoad] = await Promise.all([
     db
-      .select({ boat: boats, ownerEmail: usersTable.email })
+      .select({ boat: boats, ownerName: usersTable.name })
       .from(boats)
       .leftJoin(usersTable, eq(boats.ownerId, usersTable.id))
       .orderBy(desc(boats.active), asc(boats.createdAt)),
@@ -52,7 +51,7 @@ export default async function AdminBoats() {
             </tr>
           </thead>
           <tbody>
-            {boatList.map(({ boat: b, ownerEmail }) => (
+            {boatList.map(({ boat: b, ownerName }) => (
               <tr key={b.id} className={`border-b border-(--nl-divider) last:border-0 ${b.active ? '' : 'bg-[#F7F9F9] text-(--nl-muted)'}`}>
                 <td className="px-5 py-4">
                   <div className="flex flex-wrap items-center gap-2">
@@ -67,15 +66,9 @@ export default async function AdminBoats() {
                 </td>
                 <td className="px-5 py-4">{b.port}</td>
                 <td className="px-5 py-4">{b.seats} คน</td>
-                <td className="px-5 py-4 align-top">
-                  {ownerEmail ? (
-                    <div className="flex flex-col items-start gap-1">
-                      <span className="text-sm">{ownerEmail}</span>
-                      <RemoveOwner boatId={b.id} />
-                    </div>
-                  ) : (
-                    <span className="text-(--nl-muted)">—</span>
-                  )}
+                <td className="px-5 py-4">
+                  {/* ชื่อที่ลงทะเบียนของเจ้าของเรือ — ไม่มีเจ้าของ = — */}
+                  {b.ownerId ? <span className="font-semibold">{ownerName ?? 'ไม่ระบุชื่อ'}</span> : <span className="text-(--nl-muted)">—</span>}
                 </td>
                 {TRIPS.map((t) => {
                   const price = boatPrice(b, t.id);

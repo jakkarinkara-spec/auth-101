@@ -1,18 +1,27 @@
 import { cache } from 'react';
 import { db } from '@/app/db/index';
-import { boats, usersTable } from '@/app/db/schema';
-import { and, eq } from 'drizzle-orm';
+import { boats, ownerProfiles, usersTable } from '@/app/db/schema';
+import { and, eq, isNotNull, or } from 'drizzle-orm';
 
-// role ไม่ได้อยู่ใน JWT — อ่านจาก DB ทุกครั้ง จะได้มีผลทันทีเมื่อเปลี่ยน role
+// owner_profiles ที่รอ admin ตรวจ: ใบสมัคร (pending) + คำขอแก้ไขของเจ้าของเรือที่อนุมัติแล้ว (มี pending_data)
+// ใช้ทั้งรายการ /admin/owners และตัวเลขในเมนู / หน้าภาพรวม
+export const OWNER_REVIEW_WHERE = or(
+  eq(ownerProfiles.status, 'pending'),
+  and(eq(ownerProfiles.status, 'approved'), isNotNull(ownerProfiles.pendingData)),
+);
+
+// ข้อมูลบัญชีล่าสุดจาก DB (ชื่อ / อีเมล / role) — JWT เก็บค่าตอนล็อกอิน ถ้าแก้ชื่อหรือเปลี่ยน role จะไม่อัปเดตจนล็อกอินใหม่
 // cache(): หลาย component เรียกใน request เดียวกัน query แค่ครั้งเดียว
-export const getRole = cache(async (userId: string) => {
+export const getAccount = cache(async (userId: string) => {
   const [user] = await db
-    .select({ role: usersTable.role })
+    .select({ name: usersTable.name, email: usersTable.email, role: usersTable.role, phones: usersTable.phones })
     .from(usersTable)
     .where(eq(usersTable.id, userId))
     .limit(1);
-  return user?.role ?? null;
+  return user ?? null;
 });
+
+export const getRole = async (userId: string) => (await getAccount(userId))?.role ?? null;
 
 export const isAdmin = async (userId: string): Promise<boolean> => (await getRole(userId)) === 'admin';
 

@@ -2,7 +2,7 @@ import { and, count, eq, gte } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { db } from '@/app/db/index';
 import { bookings, ownerApplications, ownerProfiles } from '@/app/db/schema';
-import { isAdmin } from '@/app/lib/admin';
+import { OWNER_REVIEW_WHERE, getAccount } from '@/app/lib/admin';
 import { bangkokToday } from '@/app/lib/boats';
 import SectionSidebar, { SidebarShell } from '../_components/section-sidebar';
 import { AdminHeader, NotAdmin } from './guard';
@@ -13,24 +13,23 @@ import { AdminHeader, NotAdmin } from './guard';
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user?.id) return children;
-  if (!(await isAdmin(session.user.id))) return <NotAdmin />;
-  const user = session.user;
+  const account = await getAccount(session.user.id);
+  if (account?.role !== 'admin') return <NotAdmin />;
 
   const [[pendingBookings], [owners], [boatRequests]] = await Promise.all([
     db
       .select({ n: count() })
       .from(bookings)
       .where(and(eq(bookings.status, 'pending'), gte(bookings.tripDate, bangkokToday()))),
-    db.select({ n: count() }).from(ownerProfiles).where(eq(ownerProfiles.status, 'pending')),
+    db.select({ n: count() }).from(ownerProfiles).where(OWNER_REVIEW_WHERE),
     db.select({ n: count() }).from(ownerApplications).where(eq(ownerApplications.status, 'pending')),
   ]);
 
   return (
     <>
       <AdminHeader />
-      <main className="px-6 pt-10 pb-24">
-        <SidebarShell
-          caption={`ผู้ดูแลระบบ · ${user.name ?? user.email}`}
+      <SidebarShell
+          caption={`ผู้ดูแลระบบ · ${account.name ?? account.email}`}
           sidebar={
             <SectionSidebar
               label="เมนูผู้ดูแลระบบ"
@@ -45,8 +44,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           }
         >
           {children}
-        </SidebarShell>
-      </main>
+      </SidebarShell>
     </>
   );
 }

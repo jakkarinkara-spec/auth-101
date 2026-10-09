@@ -3,6 +3,7 @@ import { db } from "@/app/db/index";
 import { ownerApplications, ownerProfiles } from "@/app/db/schema";
 import { and, count, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { isAdmin } from "@/app/lib/admin";
 import { parseBoatBody } from "../boats/validate";
 
 // ส่งคำขอที่รออนุมัติได้พร้อมกันไม่เกินกี่รายการต่อผู้ใช้ (กันสแปม)
@@ -17,6 +18,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
   const userId = session.user.id;
+  // admin สมัครเป็นเจ้าของเรือไม่ได้ (เพิ่ม / จัดการเรือได้ที่ /admin/boats อยู่แล้ว)
+  if (await isAdmin(userId)) {
+    return NextResponse.json({ message: "Admins cannot apply as boat owners" }, { status: 403 });
+  }
 
   const [profile] = await db
     .select({ phone: ownerProfiles.phone, status: ownerProfiles.status })

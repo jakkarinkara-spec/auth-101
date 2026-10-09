@@ -2,9 +2,10 @@ import { and, count, eq, gte, inArray } from 'drizzle-orm';
 import { auth } from '@/auth';
 import { db } from '@/app/db/index';
 import { bookings, ownerApplications } from '@/app/db/schema';
-import { ownedBoatIds } from '@/app/lib/admin';
+import Link from 'next/link';
+import { getAccount, ownedBoatIds } from '@/app/lib/admin';
 import { bangkokToday } from '@/app/lib/boats';
-import { SiteHeader, SiteNav } from '../_components/ui';
+import { SiteHeader, SiteNav, heading } from '../_components/ui';
 import SectionSidebar, { SidebarShell } from '../_components/section-sidebar';
 import { getOwnerProfile } from './guard';
 
@@ -16,12 +17,30 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   const user = session?.user;
   if (!user?.id) return children;
 
-  const profile = await getOwnerProfile(user.id);
+  const [profile, account] = await Promise.all([getOwnerProfile(user.id), getAccount(user.id)]);
   const header = (
     <SiteHeader>
       <SiteNav active="owner" />
     </SiteHeader>
   );
+
+  // admin สมัครเป็นเจ้าของเรือไม่ได้ — แสดงข้อความแทนทุกหน้าใต้ /owner (API ปฏิเสธอีกชั้น)
+  if (account?.role === 'admin') {
+    return (
+      <>
+        {header}
+        <main className="flex flex-1 items-start justify-center px-6 pt-16 pb-24">
+          <div className="flex w-full max-w-[640px] flex-col gap-3 rounded-[20px] border border-(--nl-line) bg-white p-10 text-center">
+            <h1 className={`${heading} text-[28px]`}>ผู้ดูแลระบบสมัครเป็นเจ้าของเรือไม่ได้</h1>
+            <p className="text-(--nl-muted)">บัญชีผู้ดูแลระบบเพิ่มและจัดการเรือได้โดยตรงที่หน้าจัดการเรือ</p>
+            <Link href="/admin/boats" className="mt-2 font-semibold text-(--nl-teal) hover:text-(--nl-teal-dk)">
+              ไปหน้าจัดการเรือ →
+            </Link>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   if (profile?.status !== 'approved') {
     return (
@@ -48,8 +67,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   return (
     <>
       {header}
-      <main className="px-6 pt-10 pb-24">
-        <SidebarShell
+      <SidebarShell
           caption={`เจ้าของเรือ · ${profile.fullName}`}
           sidebar={
             <SectionSidebar
@@ -66,8 +84,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
           }
         >
           {children}
-        </SidebarShell>
-      </main>
+      </SidebarShell>
     </>
   );
 }

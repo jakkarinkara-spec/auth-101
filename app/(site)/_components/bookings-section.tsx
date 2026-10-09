@@ -34,6 +34,7 @@ export function loadBookingRows(tab: Tab, scope?: SQL) {
       boatPort: boats.port,
       userName: usersTable.name,
       userEmail: usersTable.email,
+      userPhones: usersTable.phones, // เบอร์ติดต่อที่ลูกค้าตั้งไว้ที่ /account
     })
     .from(bookings)
     .innerJoin(boats, eq(bookings.boatId, boats.id))
@@ -103,6 +104,15 @@ export function BookingsSection({ tab, rows, today, basePath }: { tab: Tab; rows
                     <td className="px-5 py-4 align-top">
                       <div>{b.userName ?? '—'}</div>
                       <div className="text-[13px] text-(--nl-muted)">{b.userEmail}</div>
+                      {b.userPhones.length > 0 && (
+                        <div className="text-[13px] text-(--nl-muted)">
+                          {b.userPhones.map((p) => (
+                            <a key={p} href={`tel:${p.replace(/[^\d+]/g, '')}`} className="mr-2 whitespace-nowrap text-(--nl-teal) hover:underline">
+                              ☎ {p}
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-4 align-top">
                       <div>{b.guests} คน</div>

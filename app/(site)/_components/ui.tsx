@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import Link from 'next/link';
 import { signOutAction } from './actions';
 import { INCLUDED } from '@/app/lib/boats';
-import { getRole } from '@/app/lib/admin';
+import { getAccount } from '@/app/lib/admin';
 import { heading } from './styles';
 
 // ส่วนประกอบที่ใช้ซ้ำในหน้าเว็บเช่าเรือ
@@ -64,20 +64,27 @@ function AccountLink({ href, current, children }: { href: string; current: boole
 export async function SiteNav({ active, back }: { active?: string; back?: { href: string; label: string } }) {
   const session = await auth();
   const user = session?.user;
-  const role = user?.id ? await getRole(user.id) : null;
+  // ชื่อ / role อ่านจาก DB (JWT เก็บชื่อตอนล็อกอิน แก้ชื่อที่ /account แล้วจะได้แสดงทันที)
+  const account = user?.id ? await getAccount(user.id) : null;
+  const role = account?.role ?? null;
 
   return (
     <>
       <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-1 border-b border-white/10 py-2.5 text-sm">
         {user ? (
           <>
-            <span className="flex items-center gap-1.5 text-(--nl-on-navy)">
+            <Link
+              href="/account"
+              aria-current={active === 'account' ? 'page' : undefined}
+              title="แก้ไขโปรไฟล์"
+              className={`flex items-center gap-1.5 ${active === 'account' ? 'font-semibold text-white' : 'text-(--nl-on-navy) hover:text-white'}`}
+            >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="8" r="4" />
                 <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
               </svg>
-              {user.name ?? user.email}
-            </span>
+              {account?.name ?? user.name ?? user.email}
+            </Link>
             <AccountLink href="/bookings" current={active === 'bookings'}>
               การจองของฉัน
             </AccountLink>

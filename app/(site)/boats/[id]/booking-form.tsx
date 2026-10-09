@@ -28,6 +28,7 @@ export default function BookingForm({
   days,
   initial,
   signedIn,
+  admin,
   closed,
   children,
 }: {
@@ -35,6 +36,7 @@ export default function BookingForm({
   days: Day[];
   initial: { trip: TripType | undefined; date: string | null; guests: number };
   signedIn: boolean;
+  admin: boolean; // admin จองไม่ได้ — ซ่อนปุ่มจอง
   closed: boolean; // เรือปิดรับจอง — ยังดูรายละเอียดได้ แต่จองไม่ได้
   children: React.ReactNode;
 }) {
@@ -75,6 +77,8 @@ export default function BookingForm({
     setStatus('idle');
     if (res?.status === 401) {
       router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
+    } else if (res?.status === 403) {
+      setError('บัญชี admin จองเรือไม่ได้');
     } else if (res?.status === 409) {
       const body = await res.json().catch(() => null);
       // 409 มีสามกรณี: เรือเพิ่งถูกปิดรับจอง / วันนั้นเพิ่งถูกปิด / วันนั้นถูกจองแล้ว
@@ -257,6 +261,10 @@ export default function BookingForm({
         {closed ? (
           <p role="status" className="rounded-[14px] bg-[#EDF1F1] px-4 py-3.5 text-[15px] font-semibold text-(--nl-label)">
             เรือลำนี้ปิดรับจองชั่วคราว
+          </p>
+        ) : admin ? (
+          <p role="status" className="rounded-[14px] bg-[#EDF1F1] px-4 py-3.5 text-[15px] font-semibold text-(--nl-label)">
+            บัญชี admin จองเรือไม่ได้
           </p>
         ) : status === 'done' ? (
           <div role="status" className="flex items-start gap-3 rounded-[14px] bg-(--nl-tint) p-4">

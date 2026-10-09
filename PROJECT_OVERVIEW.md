@@ -10,9 +10,10 @@
 |------|------|---------|
 | **เว็บเช่าเรือ** (สาธารณะ) | `/`, `/boats`, `/boats/[id]` | ดูแพ็กเกจทริป ค้นหา/กรองเรือ เลือกทริป-วัน-จำนวนคน-บริการเสริม แล้วส่งคำขอจอง (ต้องล็อกอินตอนยืนยัน) |
 | **บัญชีผู้ใช้** | `/login`, `/register` | สมัคร / เข้าสู่ระบบ (ดีไซน์เดียวกับเว็บเช่าเรือ) |
+| **ทุกคน (ล็อกอิน)** | `/account` | โปรไฟล์ของฉัน: แก้ชื่อบัญชี (อีเมลแก้ไม่ได้) + เบอร์ติดต่อสูงสุด 3 เบอร์ — ปุ่มบันทึกเดียวกัน ส่งเฉพาะส่วนที่เปลี่ยน (ตรวจตอนกดบันทึก แจ้งเป็นกล่องเตือน) — ยังไม่เปิดให้เปลี่ยนรหัสผ่าน — ลิงก์จากชื่อในแถบบัญชี |
 | **ลูกค้า** | `/bookings` | การจองของฉัน — ทริปที่กำลังจะถึง และที่ผ่านมา / ยกเลิก, ยกเลิกคำขอที่ยังรอยืนยันเองได้ (ต้องล็อกอิน) |
 | **เจ้าของเรือ** | `/owner`, `/owner/bookings`, `/owner/boats` (+ `/[id]`), `/owner/boat-requests` (+ `/new`), `/owner/profile` | แดชบอร์ดเจ้าของเรือแบบมี sidebar (เหมือน admin): ภาพรวม, คำขอจอง, เรือของฉัน (เปิด/ปิด + วันปิด), คำขอเพิ่มเรือ, ข้อมูลส่วนตัว — สมัคร 2 ขั้น (อนุมัติตัวบุคคล → ขอเพิ่มเรือรายลำ), แก้ข้อมูลเรือ / ราคาไม่ได้ |
-| **แอดมิน** | `/admin`, `/admin/bookings`, `/admin/owners`, `/admin/boat-requests`, `/admin/boats` (+ `/new`, `/[id]`) | แดชบอร์ดผู้ดูแลแบบมี sidebar แยกหัวข้อ: ภาพรวม, คำขอจอง, ผู้สมัครเจ้าของเรือ (ขั้นที่ 1), คำขอเพิ่มเรือ (ขั้นที่ 2), เรือ (เพิ่ม / แก้ไข / เปิด-ปิด / วันปิด / ถอดเจ้าของ) — เฉพาะ `role = admin` |
+| **แอดมิน** | `/admin`, `/admin/bookings`, `/admin/owners` (+ `/history`), `/admin/boat-requests`, `/admin/boats` (+ `/new`, `/[id]`) | แดชบอร์ดผู้ดูแลแบบมี sidebar แยกหัวข้อ: ภาพรวม, คำขอจอง, ผู้สมัครเจ้าของเรือ (ขั้นที่ 1), คำขอเพิ่มเรือ (ขั้นที่ 2), เรือ (เพิ่ม / แก้ไข / เปิด-ปิด / วันปิด, คอลัมน์เจ้าของแสดงชื่อที่ลงทะเบียน) — เฉพาะ `role = admin` |
 
 หน้าเว็บเช่าเรือทำตามดีไซน์ `เว็บเช่าเรือตกปลา.html` (3 หน้า: หน้าแรก / เลือกเรือ / รายละเอียดเรือและจอง)
 
@@ -59,6 +60,7 @@ auth-101/
 │   │   ├── boats/[id]/booking-form.tsx  # (Client) เลือกทริป / วัน / จำนวนคน / บริการเสริม + สรุปราคา → POST /api/bookings
 │   │   ├── login/                  # page.tsx (Server: AuthShell, อ่าน ?callbackUrl= ?error= ?registered=) + login-form.tsx (Client: signIn)
 │   │   ├── register/               # page.tsx (Server: AuthShell) + register-form.tsx (Client: POST /api/auth/register → /login?registered=1)
+│   │   ├── account/                # /account — page.tsx + account-forms.tsx (Client: AccountForm)
 │   │   ├── bookings/page.tsx       # /bookings — การจองของฉัน (ไม่ล็อกอิน → /login?callbackUrl=/bookings) กรองด้วย userId ของ session
 │   │   ├── owner/                  # เจ้าของเรือ — layout.tsx: หัวเว็บ + sidebar (เฉพาะผ่านการอนุมัติตัวบุคคลแล้ว), guard.ts: ownerContext() / approvedOwnerContext()
 │   │   │                           #   page.tsx (/owner: ยังไม่ผ่าน = สถานะใบสมัคร, ผ่านแล้ว = ภาพรวม), bookings/, boats/ (+ [id]: วันปิด + เปิด/ปิด, ไม่ใช่เจ้าของ = 404),
@@ -69,7 +71,7 @@ auth-101/
 │   │       ├── bookings/           # /admin/bookings — ตารางคำขอจองทุกเรือ กรอง ?status=
 │   │       ├── owners/             # /admin/owners — ผู้สมัครเจ้าของเรือรออนุมัติตัวบุคคล (ขั้นที่ 1)
 │   │       ├── boat-requests/      # /admin/boat-requests — คำขอเพิ่มเรือรออนุมัติรายลำ (ขั้นที่ 2)
-│   │       ├── application-actions.tsx / remove-owner.tsx  # (Client) อนุมัติ (ยืนยันอีกครั้ง) / ไม่อนุมัติ (ต้องพิมพ์เหตุผล) / ถอดเจ้าของ
+│   │       ├── application-actions.tsx  # (Client) อนุมัติ (ยืนยันอีกครั้ง) / ไม่อนุมัติ (ต้องพิมพ์เหตุผล)
 │   │       ├── request-kind.tsx    # ป้าย + คำอธิบายสีประเภทคำขอ (REQUEST_KIND ใน styles.ts: สร้างใหม่ = เขียว, แก้ไข = ส้ม, ส่งใหม่ = ฟ้า)
 │   │       └── boats/              # /admin/boats (ตารางเรือ), new/ (เพิ่ม), [id]/ (แก้ไข + วันปิด + เปิด/ปิด)
 │   │                               #   + boat-form.tsx (Client, ใช้ทั้ง admin และ mode="apply"), closures.tsx, active-toggle.tsx
@@ -81,25 +83,26 @@ auth-101/
 │   ├── api/
 │   │   ├── auth/[...nextauth]/     # NextAuth handler
 │   │   ├── auth/register/          # POST /api/auth/register
+│   │   ├── account/                # PATCH /api/account (แก้ชื่อ — sync ชื่อเจ้าของเรือ), PUT /api/account/phones
 │   │   ├── bookings/               # POST /api/bookings — route.ts + validate.ts (คำนวณราคาใหม่ที่ server)
 │   │   ├── bookings/[id]/          # PATCH /api/bookings/[id] — admin / เจ้าของเรือ (เฉพาะเรือตัวเอง) เปลี่ยนสถานะ, ลูกค้ายกเลิกคำขอ pending ของตัวเอง
 │   │   ├── owner-applications/     # POST (ผู้ใช้สมัคร — ต้องมีข้อมูลส่วนตัวก่อน), PATCH [id] { action: approve | reject } (admin)
 │   │   ├── owner-profiles/[userId] # PATCH { action: approve | reject } — admin อนุมัติตัวบุคคล (ขั้นที่ 1) → role owner
 │   │   ├── owner-profile/          # PUT — บันทึก / แก้ไขข้อมูลส่วนตัวของตัวเอง (upsert) + validate.ts
-│   │   └── boats/                  # POST /api/boats, PATCH /api/boats/[id] (admin), DELETE /api/boats/[id]/owner (admin ถอดเจ้าของ), PATCH /api/boats/[id]/active (admin / เจ้าของ),
+│   │   └── boats/                  # POST /api/boats, PATCH /api/boats/[id] (admin), PATCH /api/boats/[id]/active (admin / เจ้าของ),
 │   │                               #   POST /api/boats/[id]/closures, DELETE /api/boats/[id]/closures/[closureId] (admin เท่านั้น)
 │   │
 │   ├── lib/
 │   │   ├── boats.ts                # ข้อมูลคงที่ (TRIPS, PORTS, AMENITIES, ADDONS, INCLUDED) + quote() คำนวณราคา + helper วันที่เวลาไทย
 │   │   ├── search.ts               # firstParam() อ่าน searchParams, containsPattern() สำหรับ ILIKE
 │   │   ├── redirect.ts             # safeCallbackUrl() — รับเฉพาะ path ในเว็บ กัน open redirect
-│   │   └── admin.ts                # getRole() (cache ต่อ request) / isAdmin() / canManageBoat() = admin หรือ boats.owner_id = ผู้ใช้ / ownedBoatIds() subquery
+│   │   └── admin.ts                # getAccount() / getRole() (อ่านชื่อ-role ล่าสุดจาก DB, cache ต่อ request) / isAdmin() / canManageBoat() = admin หรือ boats.owner_id = ผู้ใช้ / ownedBoatIds() subquery
 │   │
 │   └── db/
 │       ├── index.ts                # Drizzle client (neon-http)
 │       └── schema.ts               # users, boats, bookings
 │
-├── drizzle/                        # SQL migrations 0000–0016
+├── drizzle/                        # SQL migrations 0000–0017
 ├── scripts/
 │   ├── migrate.ts                  # apply migrations ผ่าน Neon HTTP (ใช้ตอน vercel-build)
 │   ├── baseline-migrations.ts      # mark migrations เก่าว่า applied แล้วโดยไม่รัน SQL
@@ -119,6 +122,7 @@ auth-101/
 | name | text | Nullable |
 | email | text | Unique, Required |
 | password | text | bcrypt hash |
+| phones | text[] | Required, default `{}` — เบอร์ติดต่อ 0–3 เบอร์ (แก้ที่ `/account`) admin / เจ้าของเรือเห็นในตารางคำขอจอง |
 | role | enum `user_role` | `user` (default) / `admin` / `owner` — `owner` ใช้แค่แสดงเมนู สิทธิ์จริงเช็คจาก `boats.owner_id` |
 | createdAt | timestamp | Auto |
 
@@ -184,7 +188,7 @@ auth-101/
 | Column | Type | Note |
 |--------|------|------|
 | userId | text | Primary Key — FK → `users.id` (ON DELETE CASCADE) หนึ่งแถวต่อผู้ใช้ |
-| fullName | text | Required ชื่อ-นามสกุล |
+| fullName | text | Required — ชื่อที่ลงทะเบียน (`users.name`) server ใส่ให้ตอนบันทึก ไม่รับจาก client |
 | phone | text | Required |
 | address | text | Required |
 | contactEmail | text | Nullable — อีเมลติดต่อ (อาจไม่ใช่อีเมลล็อกอิน) |
@@ -192,12 +196,29 @@ auth-101/
 
 | status | enum `owner_profile_status` | `pending` (default) / `approved` / `rejected` — ขั้นที่ 1 อนุมัติตัวบุคคล |
 | requestType | enum `owner_profile_request` | `new` / `edit` (แก้หลังอนุมัติ) / `resubmit` (ส่งใหม่หลังถูกปฏิเสธ) — admin เห็นเป็นสีต่างกัน |
-| approvedData | jsonb | Nullable — ชื่อ / เบอร์ / ที่อยู่ชุดที่อนุมัติล่าสุด ใช้แสดง "ค่าเดิม → ค่าใหม่" ของคำขอแก้ไข |
+| approvedData | jsonb | Nullable — ชื่อ / เบอร์ / ที่อยู่ชุดที่อนุมัติล่าสุด |
+| pendingData | jsonb | Nullable — `{ phone, address, contactEmail }` ที่เจ้าของเรือ (อนุมัติแล้ว) ขอแก้ รอ admin อนุมัติ — admin เห็นเป็น "ข้อมูลที่ใช้อยู่ → ค่าที่ขอแก้" |
 | rejectReason | text | Nullable — เหตุผลที่ไม่อนุมัติครั้งล่าสุด (บังคับใส่ตอนไม่อนุมัติ, ล้างเมื่ออนุมัติ) แสดงให้ผู้สมัคร + admin เห็นตอนส่งใหม่ |
 | decidedAt | timestamp | Nullable — เวลาที่ admin ตัดสิน |
 
-- แถวนี้ = ใบสมัครเป็นเจ้าของเรือ: บันทึกครั้งแรก / หลังถูกปฏิเสธ → `pending`; อนุมัติแล้วแก้ชื่อ / เบอร์ / ที่อยู่ → กลับเป็น `pending` (แก้แค่อีเมลติดต่อสถานะคงเดิม)
+- แถวนี้ = ใบสมัครเป็นเจ้าของเรือ: บันทึกครั้งแรก / หลังถูกปฏิเสธ → `pending`; อนุมัติแล้วแก้เบอร์ / ที่อยู่ / อีเมลติดต่อ → เก็บใน `pending_data` รอ admin อนุมัติก่อน (สถานะยัง `approved` ใช้ข้อมูลเดิมจนกว่าจะอนุมัติ, ไม่อนุมัติ = ทิ้งคำขอ) มีคำขอค้างอยู่ส่งใหม่ไม่ได้ (หน้า `/owner/profile` ซ่อนฟอร์ม แสดงค่าที่ขอแก้ + ปุ่มยกเลิก) — รอ admin ตัดสิน หรือกดยกเลิกคำขอ (`DELETE /api/owner-profile`) แล้วส่งใหม่ — ชื่อ = ชื่อบัญชี เปลี่ยนที่ `/account` ได้ทันที ไม่ต้องตรวจ
+- ประวัติ: ตอน admin อนุมัติ / ไม่อนุมัติ หรือเจ้าของเรือยกเลิก บันทึกลง `owner_profile_edits` (`closeOwnerEdit` ใน `app/lib/owner-edits.ts`) ดูที่ `/admin/owners/history`
+- `/admin/owners` + ตัวเลขในเมนู = `status = pending` หรือ (`approved` และมี `pending_data`) (`OWNER_REVIEW_WHERE` ใน `app/lib/admin.ts`)
+- admin สมัครเป็นเจ้าของเรือไม่ได้ — `PUT /api/owner-profile` และ `POST /api/owner-applications` ตอบ 403, หน้าใต้ `/owner` แสดงข้อความแจ้ง + ลิงก์ไป `/admin/boats`
 - ส่งคำขอเพิ่มเรือได้เฉพาะ `status = approved` — `POST /api/owner-applications` ตอบ 409 ถ้ายังไม่มีหรือยังไม่อนุมัติ และคัดลอก `phone` ไปเก็บในคำขอ ณ ตอนส่ง
+
+### `owner_profile_edits` — ประวัติคำขอแก้ข้อมูลเจ้าของเรือ
+| Field | Type | หมายเหตุ |
+|-------|------|----------|
+| id | text (UUID) | Primary Key |
+| userId | text | FK → `users.id` (cascade) — เจ้าของเรือ |
+| before / requested | jsonb | `{ phone, address, contactEmail }` ข้อมูลที่ใช้อยู่ตอนขอแก้ / ค่าที่ขอแก้ |
+| status | enum `owner_profile_edit_status` | `approved` / `rejected` / `cancelled` (เจ้าของเรือยกเลิกเอง) |
+| rejectReason | text | Nullable — เหตุผลที่ไม่อนุมัติ |
+| decidedBy | text | Nullable — FK → `users.id` (set null) admin ที่ตัดสิน (null = ยกเลิกเอง) |
+| submittedAt / decidedAt | timestamp | เวลาส่งคำขอ / เวลาตัดสิน |
+
+- บันทึกเฉพาะคำขอที่ปิดแล้ว (คำขอที่รอตรวจอยู่ใน `owner_profiles.pending_data`) — insert หลัง UPDATE สำเร็จ (ไม่มี transaction: insert พลาด = ตัดสินแล้วแต่ไม่มีในประวัติ)
 
 ### ประวัติ migration
 | ไฟล์ | เปลี่ยนอะไร |
@@ -211,6 +232,9 @@ auth-101/
 | `0009` | เพิ่ม `boats.active` (เปิด / ปิดรับจอง) |
 | `0010` | เพิ่มตาราง `boat_closures` (วันปิดรับจองรายวันของแต่ละเรือ) |
 | `0011` | role `owner`, `boats.owner_id`, ตาราง `owner_applications` |
+| `0019` | ตาราง `owner_profile_edits` (ประวัติคำขอแก้ข้อมูลเจ้าของเรือที่ตัดสินแล้ว) |
+| `0018` | `owner_profiles.pending_data` (คำขอแก้ข้อมูลหลังอนุมัติ — รออนุมัติก่อนมีผล) |
+| `0017` | `users.phones` (เบอร์ติดต่อสูงสุด 3 เบอร์) |
 | `0016` | `reject_reason` ใน `owner_profiles` และ `owner_applications` |
 | `0015` | `owner_profiles.request_type` + `approved_data` (backfill จากใบที่อนุมัติแล้ว) |
 | `0014` | `owner_profiles.status` / `decided_at` (อนุมัติตัวบุคคล) |
@@ -243,10 +267,10 @@ auth-101/
 - ลูกค้าดูการจองของตัวเองได้ที่ `/bookings` และกด "ยกเลิกคำขอ" (2 จังหวะ, `cancel-request.tsx`) ได้เฉพาะคำขอที่ยังรอยืนยันและยังไม่ถึงวัน — ยืนยันแล้วต้องติดต่อทาง LINE หรือให้ admin ยกเลิกให้
 - SiteNav แสดงลิงก์ "การจองของฉัน" เมื่อล็อกอิน, "สมัครเป็นเจ้าของเรือ" (→ `/owner`) เมื่อ `role = user`, "แดชบอร์ดเจ้าของเรือ" เมื่อ `role = owner` และ "แอดมิน" เมื่อ `role = admin`
 - **เจ้าของเรือ — อนุมัติ 2 ขั้น:**
-  1. **ตัวบุคคล:** ผู้ใช้กรอกข้อมูลส่วนตัวที่ `/owner/profile` (ชื่อ-นามสกุล, เบอร์โทร, ที่อยู่, อีเมลติดต่อถ้ามี) → admin อนุมัติในส่วน "ผู้สมัครเป็นเจ้าของเรือ" ที่ `/admin` → `owner_profiles.status = approved`, role `user` → `owner` (admin ไม่ถูกลดสิทธิ์)
-  2. **เรือรายลำ:** เจ้าของที่ผ่านขั้นที่ 1 ส่งข้อมูลเรือที่ `/owner/boat-requests/new` (`BoatForm mode="apply"`) → admin อนุมัติในส่วน "คำขอเพิ่มเรือ" → ระบบสร้างเรือโดย `owner_id` = ผู้ส่ง (อนุมัติเรือไม่ได้ถ้าผู้ส่งยังไม่ผ่านขั้นที่ 1)
+  1. **ตัวบุคคล:** ผู้ใช้กรอกข้อมูลส่วนตัวที่ `/owner/profile` (เบอร์โทร, ที่อยู่, อีเมลติดต่อถ้ามี — ชื่อใช้ชื่อที่ลงทะเบียน แก้ในฟอร์มไม่ได้) → admin อนุมัติในส่วน "ผู้สมัครเป็นเจ้าของเรือ" ที่ `/admin` → `owner_profiles.status = approved`, role `user` → `owner` (admin ไม่ถูกลดสิทธิ์)
+  2. **เรือรายลำ:** เจ้าของที่ผ่านขั้นที่ 1 ส่งข้อมูลเรือที่ `/owner/boat-requests/new` (`BoatForm mode="apply"` — ส่งแล้วกลับหน้ารายการ `/owner/boat-requests`) → admin อนุมัติในส่วน "คำขอเพิ่มเรือ" → ระบบสร้างเรือโดย `owner_id` = ผู้ส่ง (อนุมัติเรือไม่ได้ถ้าผู้ส่งยังไม่ผ่านขั้นที่ 1)
   - `/owner` = แดชบอร์ด: ยังไม่ผ่านขั้นที่ 1 แสดงสถานะใบสมัคร (ยังไม่สมัคร / รอตรวจ / ไม่ผ่าน) ไม่มี sidebar; ผ่านแล้วมี sidebar หัวข้อ ภาพรวม / คำขอจอง / เรือของฉัน / คำขอเพิ่มเรือ / ข้อมูลส่วนตัว (หน้าที่ต้องผ่านการอนุมัติจะส่งกลับ `/owner` ถ้ายังไม่ผ่าน)
-  - สิทธิ์กับเรือทุกจุดเช็คจาก `boats.owner_id` ไม่ใช่ role — admin "ถอดเจ้าของ" แล้วสิทธิ์กับเรือลำนั้นหมดทันที
+  - สิทธิ์กับเรือทุกจุดเช็คจาก `boats.owner_id` ไม่ใช่ role (ไม่มีปุ่มถอดเจ้าของในหน้าเว็บ — ต้องแก้ `boats.owner_id` ใน DB)
   - เจ้าของเห็นชื่อ / อีเมลลูกค้าที่จองเรือตัวเอง — admin ควรยืนยันตัวตนจากเบอร์โทรก่อนอนุมัติ
   - เจ้าของแก้ข้อมูลเรือ / ราคา / เพิ่มเรือไม่ได้ (admin เท่านั้น)
 - ป้ายสถานะ (`STATUS_BADGE`) อยู่ใน `(site)/_components/styles.ts`, `addonLabel()` อยู่ใน `app/lib/boats.ts` — ใช้ร่วมกันระหว่าง `/admin` กับ `/bookings`

@@ -2,14 +2,17 @@ import { auth } from "@/auth";
 import { db } from "@/app/db/index";
 import { ownerProfiles, usersTable } from "@/app/db/schema";
 import { isAdmin } from "@/app/lib/admin";
+import { closeOwnerEdit } from "@/app/lib/owner-edits";
 import { and, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 type Ctx = { params: Promise<{ userId: string }> };
 
-// admin อนุมัติ / ปฏิเสธผู้สมัครเป็นเจ้าของเรือ (ขั้นที่ 1 — ตัวบุคคล)
-// อนุมัติ: status approved + role user → owner (admin ไม่ถูกลดสิทธิ์) — จากนั้นผู้สมัครส่งคำขอเพิ่มเรือได้
-// เปลี่ยนได้เฉพาะใบที่ยัง pending (เช็คใน WHERE ของ UPDATE เดียว)
+// admin อนุมัติ / ปฏิเสธผู้สมัครเป็นเจ้าของเรือ (ขั้นที่ 1 — ตัวบุคคล) หรือคำขอแก้ข้อมูลของเจ้าของเรือที่อนุมัติแล้ว
+// ใบสมัคร (status pending): อนุมัติ → approved + role user → owner (admin ไม่ถูกลดสิทธิ์), ปฏิเสธ → rejected
+// คำขอแก้ไข (approved + pending_data): อนุมัติ → คัดลอก pending_data ลงคอลัมน์หลัก, ปฏิเสธ → ทิ้ง pending_data ใช้ข้อมูลเดิมต่อ
+//   ทั้งสองกรณีสถานะยัง approved
+// เงื่อนไขสถานะเช็คใน WHERE ของ UPDATE เดียว (กันกดซ้ำ / แข่งกัน)
 export async function PATCH(req: Request, { params }: Ctx) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -31,7 +34,14 @@ export async function PATCH(req: Request, { params }: Ctx) {
     return NextResponse.json({ message: "Reason is required when rejecting" }, { status: 400 });
   }
 
-  // อนุมัติ: เก็บข้อมูลตัวตนชุดนี้ไว้ — คำขอแก้ไขครั้งหน้าจะแสดงว่าเปลี่ยนจากชุดนี้
+  // คำขอแก้ไขของเจ้าของเรือที่อนุมัติแล้ว (บันทึกประวัติใน owner_profile_edits ด้วย)
+  const decided = await closeOwnerEdit(
+    userId,
+    action === "approve" ? { action, by: session.user.id } : { action, by: session.user.id, reason },
+  );
+  if (decided) return NextResponse.json({ userId, status: "approved" });
+
+  // ใบสมัคร — อนุมัติ: เก็บข้อมูลตัวตนชุดนี้ไว้
   const [profile] = await db
     .update(ownerProfiles)
     .set(

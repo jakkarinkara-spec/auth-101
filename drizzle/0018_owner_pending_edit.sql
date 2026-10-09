@@ -1,0 +1,1 @@
+ALTER TABLE "owner_profiles" ADD COLUMN "pending_data" jsonb;
